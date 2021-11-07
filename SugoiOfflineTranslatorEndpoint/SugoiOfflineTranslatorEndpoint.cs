@@ -18,7 +18,7 @@ namespace SugoiOfflineTranslator
 
         public override string FriendlyName => "Sugoi offline translator endpoint";
 
-        public override int MaxConcurrency => 100;
+        public override int MaxConcurrency => 1;
         public override int MaxTranslationsPerRequest => 100;
 
         public override void Initialize(IInitializationContext context)
@@ -29,10 +29,11 @@ namespace SugoiOfflineTranslator
 
         public override void OnCreateRequest(IHttpRequestCreationContext context)
         {
-            var data = new Dictionary<string, string>()
+            var data = new Dictionary<string, object>()
             {
                 { "content", context.UntranslatedText },
-                { "message", "translate sentences" }
+                { "batch", context.UntranslatedTexts },
+                { "message", "translate batch" }
             };
             
             var data_str = JsonConvert.SerializeObject(data);
@@ -49,16 +50,19 @@ namespace SugoiOfflineTranslator
         {
             var data = context.Response.Data;
             //var obj = JSON.Parse(data);
-            var translation = JsonConvert.DeserializeObject(data) as string;
+            var translations = JsonConvert.DeserializeObject<string[]>(data);
             //var code = obj.AsObject["code"].ToString();
             //if (code != "200") context.Fail("Received bad response code: " + code);
 
             //var token = obj.AsObject["text"].ToString();
             //var translation = JsonHelper.Unescape(token.Substring(2, token.Length - 4));
 
-            if (string.IsNullOrEmpty(translation)) context.Fail("Received no translation.");
+            //if (string.IsNullOrEmpty(translation)) context.Fail("Received no translation.");
 
-            context.Complete(translation);
+            //context.Complete()
+            //context.Complete(translation);
+            context.Complete(translations);
         }
+
     }
 }
