@@ -5,29 +5,28 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using Newtonsoft.Json;
-using SimpleJSON;
 using XUnity.AutoTranslator.Plugin.Core.Endpoints;
-using XUnity.AutoTranslator.Plugin.Core.Endpoints.Http;
-using XUnity.AutoTranslator.Plugin.Core.Web;
+using UnityEngine.Networking;
+
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint
+    public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint
     {
-        public override string Id => "SugoiOfflineTranslatorEndpoint";
+        public string Id => "SugoiOfflineTranslatorEndpoint";
 
-        public override string FriendlyName => "Sugoi offline translator endpoint";
+        public string FriendlyName => "Sugoi offline translator endpoint";
 
-        public override int MaxConcurrency => 1;
-        public override int MaxTranslationsPerRequest => 100;
+        public int MaxConcurrency => 1;
+        public int MaxTranslationsPerRequest => 100;
 
-        public override void Initialize(IInitializationContext context)
+        public void Initialize(IInitializationContext context)
         {
             if (context.SourceLanguage != "ja") throw new Exception("Only ja is supported as source language");
             if (context.DestinationLanguage != "en") throw new Exception("Only en is supported as destination language");
         }
 
-        public override void OnCreateRequest(IHttpRequestCreationContext context)
+        public IEnumerator Translate(ITranslationContext context)
         {
             var data = new Dictionary<string, object>()
             {
@@ -35,34 +34,29 @@ namespace SugoiOfflineTranslator
                 { "batch", context.UntranslatedTexts },
                 { "message", "translate batch" }
             };
+
             
             var data_str = JsonConvert.SerializeObject(data);
 
-            var request = new XUnityWebRequest("POST", "http://localhost:14366/", data_str);
-            request.Headers[HttpRequestHeader.ContentType] = "application/json";
-            request.Headers[HttpRequestHeader.Accept] = "*/*";
-            request.Headers[HttpRequestHeader.AcceptCharset] = "UTF-8";
+            var request = new UnityWebRequest(
+                "http://localhost:14366/",
+                "POST",
+                new DownloadHandlerBuffer(),
+                new UploadHandlerRaw(Encoding.UTF8.GetBytes(data_str)));
 
-            context.Complete(request);
+            request.SetRequestHeader("Content-Type", "application/json");
+            request.SetRequestHeader("Accept", "*/*");
+
+            yield return request.Send();
+
+            if (request.responseCode == 200)
+            {
+                var handler = request.downloadHandler;
+                var response = handler.text;
+                var translations = JsonConvert.DeserializeObject<string[]>(response);
+                context.Complete(translations);
+
+            }
         }
-
-        public override void OnExtractTranslation(IHttpTranslationExtractionContext context)
-        {
-            var data = context.Response.Data;
-            //var obj = JSON.Parse(data);
-            var translations = JsonConvert.DeserializeObject<string[]>(data);
-            //var code = obj.AsObject["code"].ToString();
-            //if (code != "200") context.Fail("Received bad response code: " + code);
-
-            //var token = obj.AsObject["text"].ToString();
-            //var translation = JsonHelper.Unescape(token.Substring(2, token.Length - 4));
-
-            //if (string.IsNullOrEmpty(translation)) context.Fail("Received no translation.");
-
-            //context.Complete()
-            //context.Complete(translation);
-            context.Complete(translations);
-        }
-
     }
 }
