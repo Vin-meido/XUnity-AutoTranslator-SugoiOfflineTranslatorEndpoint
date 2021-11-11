@@ -53,9 +53,13 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="SugoiOfflineTranslatorServer.py">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy "$(TargetPath)" "F:\COM-3d2\BepinEx\plugins\XUnity.AutoTranslator\Translators"</PostBuildEvent>
+    <PostBuildEvent>copy "$(TargetPath)" "F:\COM-3d2\BepinEx\plugins\XUnity.AutoTranslator\Translators"
+copy "$(ProjectDir)/SugoiOfflineTranslatorServer.py" "F:\COM-3d2\BepinEx\plugins\XUnity.AutoTranslator\Translators"</PostBuildEvent>
   </PropertyGroup>
 </Project>
