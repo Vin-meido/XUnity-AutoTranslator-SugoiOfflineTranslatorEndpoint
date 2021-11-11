@@ -46,6 +46,9 @@
     <Reference Include="XUnity.AutoTranslator.Plugin.Core">
       <HintPath>..\libs\XUnity.AutoTranslator.Plugin.Core.dll</HintPath>
     </Reference>
+    <Reference Include="XUnity.Common">
+      <HintPath>..\libs\XUnity.Common.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="SugoiOfflineTranslatorEndpoint.cs" />

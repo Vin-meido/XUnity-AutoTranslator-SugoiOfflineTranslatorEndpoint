@@ -10,10 +10,12 @@ using XUnity.AutoTranslator.Plugin.Core.Endpoints;
 using UnityEngine.Networking;
 using System.Reflection;
 using System.IO;
+using XUnity.AutoTranslator.Plugin.Core;
+using XUnity.Common.Logging;
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint, IDisposable
+    public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
     {
         public string Id => "SugoiOfflineTranslatorEndpoint";
 
@@ -23,6 +25,8 @@ namespace SugoiOfflineTranslator
         public int MaxTranslationsPerRequest => 100;
 
         private Process process;
+        private bool isDisposing = false;
+        private bool isStarted = false;
 
         private string AssemblyDirectory {
             get
@@ -83,6 +87,7 @@ namespace SugoiOfflineTranslator
 
         public void Dispose()
         {
+            this.isDisposing = true;
             if (this.process != null)
             {
                 this.SendShutdown();
@@ -103,10 +108,36 @@ namespace SugoiOfflineTranslator
                     Arguments = $"{this.ServerScriptPath} {this.ServerPort}",
                     WorkingDirectory = this.ServerExecPath,
                     UseShellExecute = false,
-                    //CreateNoWindow = true
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
                 };
-                this.process.Start();
 
+                this.process.OutputDataReceived += (sender, args) =>
+                {
+                    XuaLogger.AutoTranslator.Debug(args.Data);
+                };
+
+                this.process.ErrorDataReceived += (sender, args) =>
+                {
+                    XuaLogger.AutoTranslator.Debug(args.Data);
+                };
+
+                this.process.Start();
+                this.process.BeginErrorReadLine();
+                this.process.BeginOutputReadLine();
+                this.isStarted = true;
+            }
+        }
+
+        public void Update()
+        {
+            if (this.isStarted && !this.isDisposing)
+            {
+                if(this.process.HasExited)
+                {
+                    XuaLogger.AutoTranslator.Error($"Translator server process exited unexpectedly [status {process.ExitCode}]");
+                    this.isStarted = false;
+                }
             }
         }
 

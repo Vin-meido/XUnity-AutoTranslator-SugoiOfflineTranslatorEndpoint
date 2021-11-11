@@ -10,9 +10,12 @@ from flask_cors import CORS, cross_origin
 
 import time
 import json
+from logging import getLogger
 
 from fairseq.models.transformer import TransformerModel
 
+
+LOG = getLogger("server")
 
 
 ja2en = TransformerModel.from_pretrained(
@@ -49,8 +52,8 @@ def sendImage():
         t = ja2en.translate(content)
 
         toc = time.perf_counter()
-        print("Request: ", content)
-        print("Translation (",round(toc-tic,2), "s): ", t)
+        # LOG.info(f"Request: {content}")
+        LOG.info(f"Translation {round(toc-tic,2)}s): {t}")
 
         return json.dumps(t)
 
@@ -65,8 +68,8 @@ def sendImage():
             ]
 
         toc = time.perf_counter()
-        print("Request: ", batch)
-        print("Translation (",round(toc-tic,2), "s): ", translated)
+        # LOG.info(f"Request: {batch}")
+        LOG.info(f"Translation complete {round(toc-tic,2)}s)")
 
         return json.dumps(translated)
 
@@ -83,5 +86,5 @@ if __name__ == "__main__":
     cli.show_server_banner = lambda *_: None
 
     port = int(sys.argv[1])
-    print(f"Running server on port {port}")
+    LOG.info(f"Running server on port {port}")
     app.run(host='127.0.0.1', port=port)
