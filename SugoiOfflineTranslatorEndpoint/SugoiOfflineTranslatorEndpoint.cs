@@ -22,7 +22,7 @@ namespace SugoiOfflineTranslator
         public string FriendlyName => "Sugoi offline translator endpoint";
 
         public int MaxConcurrency => 1;
-        public int MaxTranslationsPerRequest => 100;
+        public int MaxTranslationsPerRequest { get; set; } = 100;
 
         private Process process;
         private bool isDisposing = false;
@@ -59,7 +59,8 @@ namespace SugoiOfflineTranslator
 
         //private string SugoiInstallPath => "G:\\Downloads\\Sugoi-Japanese-Translator-V3.0";
         private string SugoiInstallPath { get; set; }
-
+        
+        private bool EnableCuda { get; set; }
 
         private string PythonExePath
         {
@@ -76,6 +77,8 @@ namespace SugoiOfflineTranslator
 
             this.SugoiInstallPath = context.GetOrCreateSetting("SugoiOfflineTranslator", "InstallPath", "");
             this.ServerPort = context.GetOrCreateSetting("SugoiOfflineTranslator", "ServerPort", "14367");
+            this.EnableCuda = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCuda", false);
+            this.MaxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
 
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
             {
@@ -101,11 +104,13 @@ namespace SugoiOfflineTranslator
         {
             if (this.process == null || this.process.HasExited)
             {
+                string cuda = this.EnableCuda ? "cuda" : "nocuda";
+
                 this.process = new Process();
                 this.process.StartInfo = new ProcessStartInfo()
                 {
                     FileName = this.PythonExePath,
-                    Arguments = $"{this.ServerScriptPath} {this.ServerPort}",
+                    Arguments = $"{this.ServerScriptPath} {this.ServerPort} {cuda}",
                     WorkingDirectory = this.ServerExecPath,
                     UseShellExecute = false,
                     RedirectStandardError = true,

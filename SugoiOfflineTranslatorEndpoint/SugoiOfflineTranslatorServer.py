@@ -28,8 +28,6 @@ ja2en = TransformerModel.from_pretrained(
     # is_gpu=True
 )
 
-ja2en.cuda()
-
 app = Flask(__name__)
 
 cors = CORS(app)
@@ -86,5 +84,11 @@ if __name__ == "__main__":
     cli.show_server_banner = lambda *_: None
 
     port = int(sys.argv[1])
+    cuda = (sys.argv[2] == "cuda")
+
+    if cuda:
+        LOG.info(f"Enabling cuda")
+        ja2en.cuda()
+
     LOG.info(f"Running server on port {port}")
     app.run(host='127.0.0.1', port=port)
