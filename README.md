@@ -11,6 +11,13 @@ Though just like any machine translators, there will be oddities and unexpected 
 Even so, unless you already use SugoiTranslator (and its offline model), you might be better off using the google, deepl, or other official translation endpoints (unless you have the disk space and processing power to spare).
 
 
+## Requirements
+
+SugoiTranslator's offline mode recommends at least 8GB of RAM. Make sure you have that + the amount of memory the game you're running also requires.
+
+CUDA support requires an NVIDIA graphics card that supports it (GTX20xx, RTX series).
+
+
 ## Installation
 
 1. Install Sugoi Translator if you havent yet, and install the Offline Model. See the youtube (https://www.youtube.com/watch?v=r8xFzVbmo7k) for details on installation and setup. Make sure you have a working translator first by running the offline translator script `Sugoi-Translator-Offline (click here).bat`
