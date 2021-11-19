@@ -17,7 +17,7 @@ namespace SugoiOfflineTranslator
 {
     public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
     {
-        public string Id => "SugoiOfflineTranslatorEndpoint";
+        public string Id => "SugoiOfflineTranslator";
 
         public string FriendlyName => "Sugoi offline translator endpoint";
 
