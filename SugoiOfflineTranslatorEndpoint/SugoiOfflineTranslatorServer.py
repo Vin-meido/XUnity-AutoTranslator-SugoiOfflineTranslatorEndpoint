@@ -80,10 +80,6 @@ def shutdown_server():
     func()
 
 
-def uescape_decode(match):
-    return match.group().encode().decode("unicode_escape")
-
-
 def translate(content):
     filter_line, isBracket = pre_translate_filter(content)
     translate = ja2en.translate(filter_line)
@@ -93,9 +89,9 @@ def translate(content):
 
 
 def pre_translate_filter(data):
-    data = data.replace('\n', '')
-    data = data.replace('\u3000', '')  # remove "　"
-    data = data.replace('\u200b', '')
+    # data = data.replace('\n', '')
+    # data = data.replace('\u3000', '')  # remove "　"
+    # data = data.replace('\u200b', '')
     data = data.strip()
 
     isBracket = data.endswith("」") and data.startswith('「')
@@ -106,7 +102,7 @@ def pre_translate_filter(data):
 def post_translate_filter(data):
     text = data.strip()
     text = text.replace('<unk>', '')
-    text = text.replace('―', '-')
+    # text = text.replace('―', '-')
     
     start = text[0]
     end = text[-1]
@@ -126,7 +122,7 @@ def post_translate_filter(data):
 def add_double_quote(data, isBracket):
     en_text = data
     if isBracket:
-        en_text = '"' + data + '"'
+        en_text = f'"{data}"'
 
     return en_text
 
@@ -145,3 +141,4 @@ if __name__ == "__main__":
 
     LOG.info(f"Running server on port {port}")
     app.run(host='127.0.0.1', port=port)
+

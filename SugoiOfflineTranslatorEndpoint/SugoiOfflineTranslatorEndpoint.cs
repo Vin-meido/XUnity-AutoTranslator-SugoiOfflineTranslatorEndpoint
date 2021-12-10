@@ -1,33 +1,33 @@
 ﻿using System;
+using System.Collections;
 using System.Text;
 using System.Diagnostics;
-using System.Collections;
-using System.Collections.Generic;
-using System.Text;
 using XUnity.AutoTranslator.Plugin.Core.Endpoints;
-using UnityEngine.Networking;
+using XUnity.AutoTranslator.Plugin.Core.Endpoints.Http;
+using XUnity.AutoTranslator.Plugin.Core.Web;
 using System.Reflection;
 using System.IO;
 using XUnity.AutoTranslator.Plugin.Core;
-using XUnity.AutoTranslator.Plugin.Core.Web;
 using XUnity.Common.Logging;
-
 using SugoiOfflineTranslator.SimpleJSON;
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
+    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
     {
-        public string Id => "SugoiOfflineTranslator";
+        public override string Id => "SugoiOfflineTranslator";
 
-        public string FriendlyName => "Sugoi offline translator endpoint";
+        public override string FriendlyName => "Sugoi offline translator endpoint";
 
-        public int MaxConcurrency => 1;
-        public int MaxTranslationsPerRequest { get; set; } = 100;
+        //public override int MaxConcurrency => 1;
+        int maxTranslationsPerRequest { get; set; } = 100;
+
+        public override int MaxTranslationsPerRequest => maxTranslationsPerRequest;
 
         private Process process;
         private bool isDisposing = false;
         private bool isStarted = false;
+        private bool isReady = false;
 
         private string TranslatorPath
         {
@@ -38,16 +38,16 @@ namespace SugoiOfflineTranslator
                 if (type == null)
                 {
                     XuaLogger.AutoTranslator.Error("Cannot load xuat settings class");
-                }
+            }
 
                 var prop = type.GetField("TranslatorsPath", BindingFlags.Static | BindingFlags.Public);
                 if (prop == null)
-                {
+        {
                     XuaLogger.AutoTranslator.Error("Cannot get translator path");
-                }
+            }
 
                 return prop.GetValue(null) as string;
-            }
+        }
         }
 
         private string ServerScriptPath { get; set; }
@@ -77,7 +77,7 @@ namespace SugoiOfflineTranslator
             }
         }
 
-        public void Initialize(IInitializationContext context)
+        public override void Initialize(IInitializationContext context)
         {
             if (context.SourceLanguage != "ja") throw new Exception("Only ja is supported as source language");
             if (context.DestinationLanguage != "en") throw new Exception("Only en is supported as destination language");
@@ -85,9 +85,9 @@ namespace SugoiOfflineTranslator
             this.SugoiInstallPath = context.GetOrCreateSetting("SugoiOfflineTranslator", "InstallPath", "");
             this.ServerPort = context.GetOrCreateSetting("SugoiOfflineTranslator", "ServerPort", "14367");
             this.EnableCuda = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCuda", false);
-            this.MaxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
+            this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
             this.ServerScriptPath = context.GetOrCreateSetting("SugoiOfflineTranslator", "CustonServerScriptPath", "");
-            this.MaxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
+            this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
@@ -110,7 +110,6 @@ namespace SugoiOfflineTranslator
             this.isDisposing = true;
             if (this.process != null)
             {
-                this.SendShutdown();
                 this.process.Kill();
                 this.process.Dispose();
                 this.process = null;
@@ -136,20 +135,8 @@ namespace SugoiOfflineTranslator
                     RedirectStandardOutput = true,
                 };
 
-                this.process.OutputDataReceived += (sender, args) =>
-                {
-                    if (this.LogServerMessages) {
-                    XuaLogger.AutoTranslator.Info(args.Data);
-                    }
-                };
-
-                this.process.ErrorDataReceived += (sender, args) =>
-                {
-                    if (this.LogServerMessages)
-                    {
-                    XuaLogger.AutoTranslator.Info(args.Data);
-                    }
-                };
+                this.process.OutputDataReceived += this.ServerDataReceivedEventHandler;
+                this.process.ErrorDataReceived += this.ServerDataReceivedEventHandler;
 
                 this.process.Start();
                 this.process.BeginErrorReadLine();
@@ -170,32 +157,53 @@ namespace SugoiOfflineTranslator
             }
         }
 
+        void ServerDataReceivedEventHandler(object sender, DataReceivedEventArgs args)
+        {
+            if (this.LogServerMessages)
+            {
+                XuaLogger.AutoTranslator.Info(args.Data);
+            }
+
+            if (!this.isReady && args.Data.Contains("(Press CTRL+C to quit)"))
+            {
+                this.isReady = true;
+            }
+        }
+
+        /*
         private void SendShutdown()
         {
             var json = new JSONObject();
             json["content"] = "";
             json["message"] = "close server";
-            
+
             var data = json.ToString();
 
             var request = this.CreateRequest(data);
             request.Send();
         }
+        */
 
-        private UnityWebRequest CreateRequest(string data_str)
+        IEnumerator ITranslateEndpoint.Translate(ITranslationContext context)
         {
-            var request = new UnityWebRequest(
-                $"http://localhost:{ServerPort}/",
-                "POST",
-                new DownloadHandlerBuffer(),
-                new UploadHandlerRaw(Encoding.UTF8.GetBytes(data_str)));
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            yield return base.Translate(context);
+            var elapsed = stopwatch.Elapsed.TotalSeconds;
 
-            request.SetRequestHeader("Content-Type", "application/json");
-            request.SetRequestHeader("Accept", "*/*");
-            return request;
+            if(LogServerMessages)
+            {
+                XuaLogger.AutoTranslator.Info($"Translate complete {elapsed}s");
+
+            }
         }
 
-        public IEnumerator Translate(ITranslationContext context)
+        public override IEnumerator OnBeforeTranslate(IHttpTranslationContext context)
+        {
+            while (!isReady) yield return null;
+        }
+
+        public override void OnCreateRequest(IHttpRequestCreationContext context)
         {
             var json = new JSONObject();
             json["content"] = context.UntranslatedText;
@@ -203,18 +211,18 @@ namespace SugoiOfflineTranslator
             json["message"] = "translate batch";
             var data = json.ToString();
 
-            var request = CreateRequest(data);
+            var request = new XUnityWebRequest("POST", $"http://127.0.0.1:{ServerPort}/", data);
+            request.Headers["Content-Type"] = "application/json";
+            request.Headers["Accept"] = "*/*";
 
-            yield return request.Send();
+            context.Complete(request);
+        }
 
-            if (request.responseCode == 200)
-            {
-                var handler = request.downloadHandler;
-                var response = handler.text;
-                var translations = JSON.Parse(response).AsStringList.ToArray();
-                context.Complete(translations);
-
-            }
+        public override void OnExtractTranslation(IHttpTranslationExtractionContext context)
+        {
+            var data = context.Response.Data;
+            var result = JSON.Parse(data);
+            context.Complete(result.AsStringList.ToArray());
         }
     }
 }
