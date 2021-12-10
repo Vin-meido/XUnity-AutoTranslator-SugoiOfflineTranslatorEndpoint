@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using UnityEngine.Networking;
 using System.Reflection;
 using System.IO;
 using XUnity.AutoTranslator.Plugin.Core;
+using XUnity.AutoTranslator.Plugin.Core.Web;
 using XUnity.Common.Logging;
 
 using SugoiOfflineTranslator.SimpleJSON;
@@ -27,24 +29,28 @@ namespace SugoiOfflineTranslator
         private bool isDisposing = false;
         private bool isStarted = false;
 
-        private string AssemblyDirectory {
-            get
-            {
-                string codeBase = Assembly.GetExecutingAssembly().CodeBase;
-                UriBuilder uri = new UriBuilder(codeBase);
-                string path = Uri.UnescapeDataString(uri.Path);
-                return Path.GetDirectoryName(path);
-
-            }
-        }
-
-        private string ServerScriptPath
+        private string TranslatorPath
         {
             get
             {
-                return Path.Combine(this.AssemblyDirectory, "SugoiOfflineTranslatorServer.py");
+                var assembly = typeof(AutoTranslationPlugin).Assembly;
+                var type = assembly.GetType("XUnity.AutoTranslator.Plugin.Core.Configuration.Settings");
+                if (type == null)
+                {
+                    XuaLogger.AutoTranslator.Error("Cannot load xuat settings class");
+                }
+
+                var prop = type.GetField("TranslatorsPath", BindingFlags.Static | BindingFlags.Public);
+                if (prop == null)
+                {
+                    XuaLogger.AutoTranslator.Error("Cannot get translator path");
+                }
+
+                return prop.GetValue(null) as string;
             }
         }
+
+        private string ServerScriptPath { get; set; }
 
         private string ServerExecPath
         {
@@ -60,6 +66,8 @@ namespace SugoiOfflineTranslator
         private string SugoiInstallPath { get; set; }
         
         private bool EnableCuda { get; set; }
+
+        private bool LogServerMessages { get; set; }
 
         private string PythonExePath
         {
@@ -78,10 +86,20 @@ namespace SugoiOfflineTranslator
             this.ServerPort = context.GetOrCreateSetting("SugoiOfflineTranslator", "ServerPort", "14367");
             this.EnableCuda = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCuda", false);
             this.MaxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
+            this.ServerScriptPath = context.GetOrCreateSetting("SugoiOfflineTranslator", "CustonServerScriptPath", "");
+            this.MaxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
+            this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
             {
                 throw new Exception("need to specify InstallPath");
+            }
+
+            if (string.IsNullOrEmpty(this.ServerScriptPath))
+            {
+                var tempPath = Path.GetTempPath();
+                this.ServerScriptPath = Path.Combine(tempPath, "SugoiOfflineTranslatorServer.py");
+                File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
             }
 
             this.StartProcess();
@@ -105,7 +123,7 @@ namespace SugoiOfflineTranslator
             {
                 string cuda = this.EnableCuda ? "cuda" : "nocuda";
 
-                XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
+                XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tTranslatorsDir: {this.TranslatorPath}\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
 
                 this.process = new Process();
                 this.process.StartInfo = new ProcessStartInfo()
@@ -120,12 +138,17 @@ namespace SugoiOfflineTranslator
 
                 this.process.OutputDataReceived += (sender, args) =>
                 {
+                    if (this.LogServerMessages) {
                     XuaLogger.AutoTranslator.Info(args.Data);
+                    }
                 };
 
                 this.process.ErrorDataReceived += (sender, args) =>
                 {
+                    if (this.LogServerMessages)
+                    {
                     XuaLogger.AutoTranslator.Info(args.Data);
+                    }
                 };
 
                 this.process.Start();
