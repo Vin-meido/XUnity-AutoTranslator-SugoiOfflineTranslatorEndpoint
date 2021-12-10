@@ -105,11 +105,13 @@ namespace SugoiOfflineTranslator
             {
                 string cuda = this.EnableCuda ? "cuda" : "nocuda";
 
+                XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
+
                 this.process = new Process();
                 this.process.StartInfo = new ProcessStartInfo()
                 {
                     FileName = this.PythonExePath,
-                    Arguments = $"{this.ServerScriptPath} {this.ServerPort} {cuda}",
+                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda}",
                     WorkingDirectory = this.ServerExecPath,
                     UseShellExecute = false,
                     RedirectStandardError = true,
@@ -118,12 +120,12 @@ namespace SugoiOfflineTranslator
 
                 this.process.OutputDataReceived += (sender, args) =>
                 {
-                    XuaLogger.AutoTranslator.Debug(args.Data);
+                    XuaLogger.AutoTranslator.Info(args.Data);
                 };
 
                 this.process.ErrorDataReceived += (sender, args) =>
                 {
-                    XuaLogger.AutoTranslator.Debug(args.Data);
+                    XuaLogger.AutoTranslator.Info(args.Data);
                 };
 
                 this.process.Start();
