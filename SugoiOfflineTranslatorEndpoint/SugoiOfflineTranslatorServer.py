@@ -10,6 +10,7 @@ from flask_cors import CORS, cross_origin
 
 import time
 import json
+import re
 from logging import getLogger
 
 from fairseq.models.transformer import TransformerModel
@@ -47,7 +48,7 @@ def sendImage():
         return
 
     if (message == "translate sentences"):
-        t = ja2en.translate(content)
+        t = translate(content)
 
         toc = time.perf_counter()
         # LOG.info(f"Request: {content}")
@@ -61,7 +62,7 @@ def sendImage():
             batch = [s.strip('﻿').strip() for s in batch]
 
             translated = [
-                ja2en.translate(s)
+                translate(s)
                 for s in batch
             ]
 
@@ -77,6 +78,58 @@ def shutdown_server():
     if func is None:
         raise RuntimeError('Not running with the Werkzeug Server')
     func()
+
+
+def uescape_decode(match):
+    return match.group().encode().decode("unicode_escape")
+
+
+def translate(content):
+    filter_line, isBracket = pre_translate_filter(content)
+    translate = ja2en.translate(filter_line)
+    translate = post_translate_filter(translate)
+    translate = add_double_quote(translate, isBracket)
+    return translate
+
+
+def pre_translate_filter(data):
+    data = data.replace('\n', '')
+    data = data.replace('\u3000', '')  # remove "　"
+    data = data.replace('\u200b', '')
+    data = data.strip()
+
+    isBracket = data.endswith("」") and data.startswith('「')
+
+    return data, isBracket
+
+
+def post_translate_filter(data):
+    text = data.strip()
+    text = text.replace('<unk>', '')
+    text = text.replace('―', '-')
+    
+    start = text[0]
+    end = text[-1]
+
+    start_quotes = ('「', '”', '“', '"', "'")
+    end_quotes = ('」',  '“', '”', '"', "'")
+
+    if start in start_quotes:
+        text = text[1:]
+
+    if end in end_quotes:
+        text = text[:-1]
+
+    return text
+
+
+def add_double_quote(data, isBracket):
+    en_text = data
+    if isBracket:
+        en_text = '"' + data + '"'
+
+    return en_text
+
 
 if __name__ == "__main__":
     # monkey patch cli banner
