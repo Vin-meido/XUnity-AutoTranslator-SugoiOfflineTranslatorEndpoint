@@ -2,16 +2,15 @@
 using System.Diagnostics;
 using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net;
 using System.Text;
-using Newtonsoft.Json;
 using XUnity.AutoTranslator.Plugin.Core.Endpoints;
 using UnityEngine.Networking;
 using System.Reflection;
 using System.IO;
 using XUnity.AutoTranslator.Plugin.Core;
 using XUnity.Common.Logging;
+
+using SugoiOfflineTranslator.SimpleJSON;
 
 namespace SugoiOfflineTranslator
 {
@@ -148,20 +147,18 @@ namespace SugoiOfflineTranslator
 
         private void SendShutdown()
         {
-            var data = new Dictionary<string, object>()
-            {
-                { "content", "" },
-                { "message", "close server" }
-            };
+            var json = new JSONObject();
+            json["content"] = "";
+            json["message"] = "close server";
+            
+            var data = json.ToString();
 
             var request = this.CreateRequest(data);
             request.Send();
         }
 
-        private UnityWebRequest CreateRequest(Dictionary<string, object> data)
+        private UnityWebRequest CreateRequest(string data_str)
         {
-            var data_str = JsonConvert.SerializeObject(data);
-
             var request = new UnityWebRequest(
                 $"http://localhost:{ServerPort}/",
                 "POST",
@@ -175,12 +172,11 @@ namespace SugoiOfflineTranslator
 
         public IEnumerator Translate(ITranslationContext context)
         {
-            var data = new Dictionary<string, object>()
-            {
-                { "content", context.UntranslatedText },
-                { "batch", context.UntranslatedTexts },
-                { "message", "translate batch" }
-            };
+            var json = new JSONObject();
+            json["content"] = context.UntranslatedText;
+            json["batch"] = context.UntranslatedTexts;
+            json["message"] = "translate batch";
+            var data = json.ToString();
 
             var request = CreateRequest(data);
 
@@ -190,7 +186,7 @@ namespace SugoiOfflineTranslator
             {
                 var handler = request.downloadHandler;
                 var response = handler.text;
-                var translations = JsonConvert.DeserializeObject<string[]>(response);
+                var translations = JSON.Parse(response).AsStringList.ToArray();
                 context.Complete(translations);
 
             }
