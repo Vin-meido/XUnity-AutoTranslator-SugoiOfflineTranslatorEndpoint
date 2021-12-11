@@ -79,6 +79,12 @@ namespace SugoiOfflineTranslator
                 this.ServerScriptPath = Path.Combine(tempPath, "SugoiOfflineTranslatorServer.py");
                 File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
             }
+
+            var configuredEndpoint = context.GetOrCreateSetting<string>("Service", "Endpoint");
+            if (configuredEndpoint == this.Id)
+            {
+                this.StartProcess();
+            }
         }
 
         public void Dispose()
