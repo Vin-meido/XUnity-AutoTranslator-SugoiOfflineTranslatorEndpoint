@@ -24,11 +24,11 @@ CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX ser
 
 **optional**: If you have a recent nvidia graphics card (10xx, RTX series), you can also install the Cuda update from their discord (https://discord.com/channels/778778890239344641/795551389211164703/902472195710779394) for faster translations. Check included docs in the package for install instructions of this update. Make sure that's working as well before continuing.
 
-2. Copy `SugoiOfflineTranslator.dll` and `SugoiOfflineTranslatorServer.py` to XUAT's `translators` folder. This is usualy at `BepinEx\plugins\XUnity.AutoTranslator\Translators` from the root/install folder of your game.
+2. Copy `SugoiOfflineTranslator.dll` to XUAT's `translators` folder. See https://github.com/bbepis/XUnity.AutoTranslator#installation as to the locations of the translators folder for each type of XUAT installation.
 
-**optional**: If you would like to speed up picking up of translations, you can also install `SugoiOfflineTranslator.XUATHooks.dll` into your `BepinEx\plugins\` directory. This will reduce the ~1s mandatory delay from XUAT, as well as disable spam checks while SugoiOfflineTranslator is the active endpoint. The translation works with or without this however, so you can omit this plugin if it is causing issues.
+**optional**: For BepInEx If you would like to speed up picking up of translations, you can also install `SugoiOfflineTranslator.XUATHooks.dll` into your `BepinEx\plugins\` directory. This will reduce the ~1s mandatory delay from XUAT, as well as disable spam checks while SugoiOfflineTranslator is the active endpoint. The translation works with or without this however, so you can omit this plugin if it is causing issues.
 
-3. Backup your XUAT configuration file. This is usually at `BepinEx\config\AutoTranslatorConfig.ini`. After you have a backup copy, edit the configuration and change the `Endpoint` setting to `SugoiOfflineTranslator`.  Your `[Service]` section should look like this:
+3. Backup your XUAT configuration file (`AutoTranslatorConfig.ini`). After you have a backup copy, edit the configuration and change the `Endpoint` setting to `SugoiOfflineTranslator`.  Your `[Service]` section should look like this:
 ```
 [Service]
 Endpoint=SugoiOfflineTranslator
