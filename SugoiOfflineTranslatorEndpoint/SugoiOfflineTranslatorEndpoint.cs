@@ -11,7 +11,7 @@ using SugoiOfflineTranslator.HttpWorker;
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint //HttpEndpoint //, ITranslateEndpoint //, IDisposable
+    public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint, IDisposable
     {
         public string Id => "SugoiOfflineTranslator";
 
@@ -55,8 +55,6 @@ namespace SugoiOfflineTranslator
             }
         }
 
-        //ServicePoint servicePoint;
-
         public void Initialize(IInitializationContext context)
         {
             if (context.SourceLanguage != "ja") throw new Exception("Only ja is supported as source language");
@@ -70,16 +68,6 @@ namespace SugoiOfflineTranslator
             this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
-            //context.DisableCertificateChecksFor(new string[] { "127.0.0.1" });
-            //var uri = new Uri($"http://127.0.0.1:{ServerPort}/");
-            //servicePoint = ServicePointManager.FindServicePoint(uri);
-            //servicePoint.Expect100Continue = false;
-            //servicePoint.ConnectionLimit = 10;
-            //servicePoint.MaxIdleTime = 1000;
-
-            //servicePoint.UseNagleAlgorithm = false;
-            //servicePoint.SetTcpKeepAlive(false, 10, 10);
-
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
             {
                 throw new Exception("need to specify InstallPath");
@@ -91,11 +79,8 @@ namespace SugoiOfflineTranslator
                 this.ServerScriptPath = Path.Combine(tempPath, "SugoiOfflineTranslatorServer.py");
                 File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
             }
-
-            this.StartProcess();
         }
 
-        /*
         public void Dispose()
         {
             this.isDisposing = true;
@@ -105,12 +90,7 @@ namespace SugoiOfflineTranslator
                 this.process.Dispose();
                 this.process = null;
             }
-        }*/
-        /*
-        object YieldWait()
-        {
-            return CoroutineHelper.Instance.CreateWaitForSeconds(.1f);
-        }*/
+        }
 
         private void StartProcess()
         {
@@ -183,46 +163,14 @@ namespace SugoiOfflineTranslator
         */
 
         
-        /*
-        IEnumerator ITranslateEndpoint.Translate(ITranslationContext context)
-        {
-            XuaLogger.AutoTranslator.Warn($"Translate start {context.UntranslatedText}");
-            XuaLogger.AutoTranslator.Warn($"Active connections is {servicePoint.CurrentConnections}");
-            //var stopwatch = new Stopwatch();
-            //stopwatch.Start();
-            //context.Complete(context.UntranslatedTexts);
-
-            yield return base.Translate(context);
-            //yield return CoroutineHelper.Instance.CreateWaitForSeconds(2);
-            
-            //yield return null;
-            //var elapsed = stopwatch.Elapsed.TotalSeconds;
-            //stopwatch.Stop();
-
-            //if(LogServerMessages)
-            //{
-                XuaLogger.AutoTranslator.Warn($"Translate end");
-            //}
-        }
-        */
-        
-        
         public IEnumerator OnBeforeTranslate(ITranslationContext context)
         {
-            /*
-            yield return null;
             if (this.process == null)
             {
                 this.StartProcess();
             }
-            */
-
-            //yield return CoroutineHelper.Instance.CreateWaitForSeconds(2);
-            XuaLogger.AutoTranslator.Warn($"OnBeforeTranslate {context.UntranslatedText}");
 
             while (!isReady) yield return null;
-
-            XuaLogger.AutoTranslator.Warn($"OnBeforeTranslate ready {context.UntranslatedText}");
         }
         
         public string GetUrlEndpoint()
@@ -267,10 +215,6 @@ namespace SugoiOfflineTranslator
                 var resultArray = result.AsStringList.ToArray();
 
                 context.Complete(resultArray);
-                //context.Complete(resultArray[0]);
-                XuaLogger.AutoTranslator.Warn("OnExtractTranslation ready");
-                //context.Complete(result.ToString());
-
             }
         }
     }

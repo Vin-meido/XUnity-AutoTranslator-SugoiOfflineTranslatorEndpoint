@@ -26,7 +26,7 @@ namespace SugoiOfflineTranslator.XUATHooks.Patches
             }
 
 #if DEBUG            
-            SugoiOfflineTranslatorXUATHooksPlugin.Log("Spam checker call ignored");
+            SugoiOfflineTranslatorXUATHooksPlugin.LogDebug("Spam checker call ignored");
 #endif
             return false;
         }
