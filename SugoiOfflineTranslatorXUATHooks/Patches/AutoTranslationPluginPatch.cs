@@ -30,7 +30,7 @@ namespace SugoiOfflineTranslator.XUATHooks.Patches
             }
 
 # if DEBUG
-            SugoiOfflineTranslatorXUATHooksPlugin.LogDebug("WaitForTextStabilization override duration");
+            XUATHooksPlugin.LogDebug("WaitForTextStabilization override duration");
 # endif
             delay = 0.1f;
         }

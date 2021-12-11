@@ -9,12 +9,15 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SugoiOfflineTranslator.XUATHooks</RootNamespace>
     <AssemblyName>SugoiOfflineTranslator.XUATHooks</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
     <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release-ilcpp' ">
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -35,7 +38,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)' == 'Release-ilcpp' ">
     <Reference Include="0Harmony">
       <HintPath>..\libs\ilcpp\0Harmony.dll</HintPath>
     </Reference>
@@ -46,10 +49,6 @@
       <HintPath>..\libs\ilcpp\BepInEx.IL2CPP.dll</HintPath>
     </Reference>
     <Reference Include="System" />
-    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\UnityEngine.5.6.1\lib\net35\UnityEngine.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="XUnity.AutoTranslator.Plugin.Core">
       <HintPath>..\libs\ilcpp\XUnity.AutoTranslator.Plugin.Core.dll</HintPath>
     </Reference>
@@ -57,16 +56,29 @@
       <HintPath>..\libs\ilcpp\XUnity.AutoTranslator.Plugin.Core.IL2CPP.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup Condition=" '$(Configuration)' != 'Release-ilcpp' ">
+    <Reference Include="0Harmony">
+      <HintPath>..\libs\0Harmony.dll</HintPath>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>..\libs\BepInEx.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>..\libs\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="XUnity.AutoTranslator.Plugin.Core">
+      <HintPath>..\libs\XUnity.AutoTranslator.Plugin.Core.dll</HintPath>
+    </Reference>
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="Patches\AutoTranslationPluginPatch.cs" />
     <Compile Include="Patches\SpamCheckerPatch.cs" />
-    <Compile Include="XUATHooksPlugin.IL2CPP.cs" />
+    <Compile Include="XUATHooksPlugin.BepIn54.cs" Condition=" '$(Configuration)' != 'Release-ilcpp' " />
+    <Compile Include="XUATHooksPlugin.IL2CPP.cs" Condition=" '$(Configuration)' == 'Release-ilcpp' " />
     <Compile Include="TranslationManagerHelper.cs" />
     <Compile Include="XUATHooksPlugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

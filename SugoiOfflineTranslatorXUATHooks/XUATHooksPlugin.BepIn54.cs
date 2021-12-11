@@ -1,17 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using BepInEx.IL2CPP;
+﻿
+using BepInEx;
+
 
 namespace SugoiOfflineTranslator.XUATHooks
 {
-    partial class XUATHooksPlugin : BasePlugin
+    partial class XUATHooksPlugin : BaseUnityPlugin
     {
-        public override void Load()
+        public void Awake()
         {
             this.Init();
+        }
+
+        void OnEnable()
+        {
             this.PatchAll();
         }
 

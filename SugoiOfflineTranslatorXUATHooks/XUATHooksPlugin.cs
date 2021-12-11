@@ -1,11 +1,5 @@
 ﻿using System;
-using System.Reflection;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
-using UnityEngine;
 using BepInEx;
 using HarmonyLib;
 using SugoiOfflineTranslator.XUATHooks.Patches;
@@ -14,17 +8,11 @@ using SugoiOfflineTranslator.XUATHooks.Patches;
 namespace SugoiOfflineTranslator.XUATHooks
 {
     [BepInPlugin("org.bepinex.plugins.sugoiofflinetranslator.xuathooks", "SugoiOfflineTranslaotXUATHooks", "1.0.0.0")]
-    public partial class SugoiOfflineTranslatorXUATHooksPlugin
+    public partial class XUATHooksPlugin
     {
-        public static SugoiOfflineTranslatorXUATHooksPlugin Instance { get; private set; }
+        public static XUATHooksPlugin Instance { get; private set; }
 
         Harmony harmonyInstance;
-
-        public void Awake()
-        {
-            this.Init();
-
-        }
 
         protected void Init()
         {
@@ -36,10 +24,9 @@ namespace SugoiOfflineTranslator.XUATHooks
             Instance = this;
             harmonyInstance = new Harmony("org.bepinex.plugins.sugoiofflinetranslator.xuathooks");
             LogDebug("Initialized");
-            this.OnEnable();
         }
 
-        public void OnEnable()
+        public void PatchAll()
         {
 #if DEBUG
             LogDebug("Enabling patches");
