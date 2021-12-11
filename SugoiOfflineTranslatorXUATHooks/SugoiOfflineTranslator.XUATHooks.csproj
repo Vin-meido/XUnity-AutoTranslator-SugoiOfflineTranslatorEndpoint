@@ -100,11 +100,18 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup Condition=" '$(Configuration)' != 'Release-ilcpp' ">
-    <PostBuildEvent>copy "$(TargetPath)" "F:\COM-3d2\BepinEx\plugins\"</PostBuildEvent>
+    <PostBuildEvent>
+      mkdir "$(TargetDir)\BepInEx\plugins\"
+      copy "$(TargetPath)" "$(TargetDir)\BepInEx\plugins\"
+
+      copy "$(TargetPath)" "F:\COM-3d2\BepinEx\plugins\"
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release-ilcpp' ">
     <PostBuildEvent>
-      echo "$(TargetPath)" "D:\iris-mini-rpg\BepInEx\plugins\"
+      mkdir "$(TargetDir)\BepInEx\plugins\"
+      copy "$(TargetPath)" "$(TargetDir)\BepInEx\plugins\"
+
       copy "$(TargetPath)" "D:\iris-mini-rpg\BepInEx\plugins\"
     </PostBuildEvent>
   </PropertyGroup>
