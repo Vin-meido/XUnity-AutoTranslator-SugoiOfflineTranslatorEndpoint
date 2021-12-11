@@ -1,28 +1,27 @@
 ﻿using System;
 using System.Collections;
-using System.Text;
 using System.Diagnostics;
 using XUnity.AutoTranslator.Plugin.Core.Endpoints;
-using XUnity.AutoTranslator.Plugin.Core.Endpoints.Http;
-using XUnity.AutoTranslator.Plugin.Core.Web;
-using System.Reflection;
 using System.IO;
 using XUnity.AutoTranslator.Plugin.Core;
 using XUnity.Common.Logging;
 using SugoiOfflineTranslator.SimpleJSON;
+using SugoiOfflineTranslator.HttpWorker;
+
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
+    public class SugoiOfflineTranslatorEndpoint : ITranslateEndpoint //HttpEndpoint //, ITranslateEndpoint //, IDisposable
     {
-        public override string Id => "SugoiOfflineTranslator";
+        public string Id => "SugoiOfflineTranslator";
 
-        public override string FriendlyName => "Sugoi offline translator endpoint";
+        public string FriendlyName => "Sugoi offline translator endpoint";
 
-        //public override int MaxConcurrency => 1;
+        public int MaxConcurrency => 1;
+
         int maxTranslationsPerRequest { get; set; } = 100;
 
-        public override int MaxTranslationsPerRequest => maxTranslationsPerRequest;
+        public int MaxTranslationsPerRequest => maxTranslationsPerRequest;
 
         private Process process;
         private bool isDisposing = false;
@@ -56,7 +55,9 @@ namespace SugoiOfflineTranslator
             }
         }
 
-        public override void Initialize(IInitializationContext context)
+        //ServicePoint servicePoint;
+
+        public void Initialize(IInitializationContext context)
         {
             if (context.SourceLanguage != "ja") throw new Exception("Only ja is supported as source language");
             if (context.DestinationLanguage != "en") throw new Exception("Only en is supported as destination language");
@@ -69,6 +70,16 @@ namespace SugoiOfflineTranslator
             this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
+            //context.DisableCertificateChecksFor(new string[] { "127.0.0.1" });
+            //var uri = new Uri($"http://127.0.0.1:{ServerPort}/");
+            //servicePoint = ServicePointManager.FindServicePoint(uri);
+            //servicePoint.Expect100Continue = false;
+            //servicePoint.ConnectionLimit = 10;
+            //servicePoint.MaxIdleTime = 1000;
+
+            //servicePoint.UseNagleAlgorithm = false;
+            //servicePoint.SetTcpKeepAlive(false, 10, 10);
+
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
             {
                 throw new Exception("need to specify InstallPath");
@@ -80,8 +91,11 @@ namespace SugoiOfflineTranslator
                 this.ServerScriptPath = Path.Combine(tempPath, "SugoiOfflineTranslatorServer.py");
                 File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
             }
+
+            this.StartProcess();
         }
 
+        /*
         public void Dispose()
         {
             this.isDisposing = true;
@@ -91,7 +105,12 @@ namespace SugoiOfflineTranslator
                 this.process.Dispose();
                 this.process = null;
             }
-        }
+        }*/
+        /*
+        object YieldWait()
+        {
+            return CoroutineHelper.Instance.CreateWaitForSeconds(.1f);
+        }*/
 
         private void StartProcess()
         {
@@ -122,8 +141,10 @@ namespace SugoiOfflineTranslator
             }
         }
 
+        /*
         public void Update()
         {
+            return;
             if (this.isStarted && !this.isDisposing)
             {
                 if(this.process.HasExited)
@@ -132,7 +153,7 @@ namespace SugoiOfflineTranslator
                     this.isStarted = false;
                 }
             }
-        }
+        }*/
 
         void ServerDataReceivedEventHandler(object sender, DataReceivedEventArgs args)
         {
@@ -161,50 +182,98 @@ namespace SugoiOfflineTranslator
         }
         */
 
+        
+        /*
         IEnumerator ITranslateEndpoint.Translate(ITranslationContext context)
         {
-            var stopwatch = new Stopwatch();
-            stopwatch.Start();
+            XuaLogger.AutoTranslator.Warn($"Translate start {context.UntranslatedText}");
+            XuaLogger.AutoTranslator.Warn($"Active connections is {servicePoint.CurrentConnections}");
+            //var stopwatch = new Stopwatch();
+            //stopwatch.Start();
+            //context.Complete(context.UntranslatedTexts);
+
             yield return base.Translate(context);
-            var elapsed = stopwatch.Elapsed.TotalSeconds;
+            //yield return CoroutineHelper.Instance.CreateWaitForSeconds(2);
+            
+            //yield return null;
+            //var elapsed = stopwatch.Elapsed.TotalSeconds;
+            //stopwatch.Stop();
 
-            if(LogServerMessages)
-            {
-                XuaLogger.AutoTranslator.Info($"Translate complete {elapsed}s");
-
-            }
+            //if(LogServerMessages)
+            //{
+                XuaLogger.AutoTranslator.Warn($"Translate end");
+            //}
         }
-
-        public override IEnumerator OnBeforeTranslate(IHttpTranslationContext context)
+        */
+        
+        
+        public IEnumerator OnBeforeTranslate(ITranslationContext context)
         {
+            /*
+            yield return null;
             if (this.process == null)
             {
                 this.StartProcess();
             }
+            */
+
+            //yield return CoroutineHelper.Instance.CreateWaitForSeconds(2);
+            XuaLogger.AutoTranslator.Warn($"OnBeforeTranslate {context.UntranslatedText}");
 
             while (!isReady) yield return null;
+
+            XuaLogger.AutoTranslator.Warn($"OnBeforeTranslate ready {context.UntranslatedText}");
+        }
+        
+        public string GetUrlEndpoint()
+        {
+            var ts = DateTime.Now.Ticks;
+            return $"http://127.0.0.1:{ServerPort}/?ts={ts}";
         }
 
-        public override void OnCreateRequest(IHttpRequestCreationContext context)
+        public string CreateRequestBody(ITranslationContext context)
         {
             var json = new JSONObject();
             json["content"] = context.UntranslatedText;
             json["batch"] = context.UntranslatedTexts;
             json["message"] = "translate batch";
-            var data = json.ToString();
-
-            var request = new XUnityWebRequest("POST", $"http://127.0.0.1:{ServerPort}/", data);
-            request.Headers["Content-Type"] = "application/json";
-            request.Headers["Accept"] = "*/*";
-
-            context.Complete(request);
+            //json["message"] = "translate sentences";
+            return json.ToString();
         }
 
-        public override void OnExtractTranslation(IHttpTranslationExtractionContext context)
+        public IEnumerator Translate(ITranslationContext context)
         {
-            var data = context.Response.Data;
-            var result = JSON.Parse(data);
-            context.Complete(result.AsStringList.ToArray());
+            IEnumerator setup = this.OnBeforeTranslate(context);
+            if (setup != null)
+            {
+                while (setup.MoveNext())
+                {
+                    object obj = setup.Current;
+                    yield return obj;
+                }
+            }
+
+
+            var url = GetUrlEndpoint();
+            var body = CreateRequestBody(context);
+            var worker = new HttpRequestWorker();
+            IEnumerator iterator = worker.Post(url, body);
+
+            while (iterator.MoveNext()) yield return iterator.Current;
+
+            if (!string.IsNullOrEmpty(worker.Result))
+            {
+                var result = JSON.Parse(worker.Result);
+                var resultArray = result.AsStringList.ToArray();
+
+                context.Complete(resultArray);
+                //context.Complete(resultArray[0]);
+                XuaLogger.AutoTranslator.Warn("OnExtractTranslation ready");
+                //context.Complete(result.ToString());
+
+            }
         }
     }
+
+
 }

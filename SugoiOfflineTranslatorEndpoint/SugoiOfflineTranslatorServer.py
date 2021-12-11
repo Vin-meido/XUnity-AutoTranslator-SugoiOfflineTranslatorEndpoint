@@ -82,10 +82,10 @@ def shutdown_server():
 
 def translate(content):
     filter_line, isBracket = pre_translate_filter(content)
-    translate = ja2en.translate(filter_line)
-    translate = post_translate_filter(translate)
-    translate = add_double_quote(translate, isBracket)
-    return translate
+    result = ja2en.translate(filter_line)
+    result = post_translate_filter(result)
+    result = add_double_quote(result, isBracket)
+    return result
 
 
 def pre_translate_filter(data):
