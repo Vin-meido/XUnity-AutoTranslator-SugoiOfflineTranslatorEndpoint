@@ -24,9 +24,13 @@ CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX ser
 
 **optional**: If you have a recent nvidia graphics card (10xx, RTX series), you can also install the Cuda update from their discord (https://discord.com/channels/778778890239344641/795551389211164703/902472195710779394) for faster translations. Check included docs in the package for install instructions of this update. Make sure that's working as well before continuing.
 
-2. Copy `SugoiOfflineTranslator.dll` to XUAT's `translators` folder. See https://github.com/bbepis/XUnity.AutoTranslator#installation as to the locations of the translators folder for each type of XUAT installation.
+2. Get the latest release zip or dll applicable for your setup:
 
-**optional**: For BepInEx If you would like to speed up picking up of translations, you can also install `SugoiOfflineTranslator.XUATHooks.dll` into your `BepinEx\plugins\` directory. This will reduce the ~1s mandatory delay from XUAT, as well as disable spam checks while SugoiOfflineTranslator is the active endpoint. The translation works with or without this however, so you can omit this plugin if it is causing issues.
+For **UnityInjector** via ReiPatcher or Sybaris, just download and place `SugoiOfflineTranslator.dll` file in your XUAT translators directory.
+
+For **BepInEx 5.4**, download SugoiOfflineTranslator-BepInEx-5.4.zip and extract to your game directory.
+
+For **Unity ILC2PP games via BepInEx bleeding edge**, extract `SugoiOfflineTranslator-BepInEx-6-ilcpp.zip` to your game directory. This requires the bleeding edge versions of BepInEx as well as the latest XUAT targetting IL2CPP (see https://github.com/bbepis/XUnity.AutoTranslator/issues/159).
 
 3. Backup your XUAT configuration file (`AutoTranslatorConfig.ini`). After you have a backup copy, edit the configuration and change the `Endpoint` setting to `SugoiOfflineTranslator`.  Your `[Service]` section should look like this:
 ```
