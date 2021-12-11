@@ -2,7 +2,7 @@
 
 Translation endpoint to support Sugoi Translator's offline translation backend (https://www.youtube.com/watch?v=r8xFzVbmo7k)
 
-Tested to support Sugoi Translator V3.0 with Offline Model V2.0. Supports games that use Unity 5.6+.
+Tested to support Sugoi Translator V3.0 with Offline Model V2.0.
 
 The Sugoi Translator's offline model boasts comparability with Deepl translations, not to mention a shorter delay and nonexistent throttling limits.
 
