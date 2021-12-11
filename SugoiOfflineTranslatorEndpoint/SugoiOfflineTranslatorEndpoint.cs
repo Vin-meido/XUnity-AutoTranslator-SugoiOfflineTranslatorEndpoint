@@ -29,27 +29,6 @@ namespace SugoiOfflineTranslator
         private bool isStarted = false;
         private bool isReady = false;
 
-        private string TranslatorPath
-        {
-            get
-            {
-                var assembly = typeof(AutoTranslationPlugin).Assembly;
-                var type = assembly.GetType("XUnity.AutoTranslator.Plugin.Core.Configuration.Settings");
-                if (type == null)
-                {
-                    XuaLogger.AutoTranslator.Error("Cannot load xuat settings class");
-            }
-
-                var prop = type.GetField("TranslatorsPath", BindingFlags.Static | BindingFlags.Public);
-                if (prop == null)
-        {
-                    XuaLogger.AutoTranslator.Error("Cannot get translator path");
-            }
-
-                return prop.GetValue(null) as string;
-        }
-        }
-
         private string ServerScriptPath { get; set; }
 
         private string ServerExecPath
@@ -86,7 +65,7 @@ namespace SugoiOfflineTranslator
             this.ServerPort = context.GetOrCreateSetting("SugoiOfflineTranslator", "ServerPort", "14367");
             this.EnableCuda = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCuda", false);
             this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
-            this.ServerScriptPath = context.GetOrCreateSetting("SugoiOfflineTranslator", "CustonServerScriptPath", "");
+            this.ServerScriptPath = context.GetOrCreateSetting("SugoiOfflineTranslator", "CustomServerScriptPath", "");
             this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
@@ -101,8 +80,6 @@ namespace SugoiOfflineTranslator
                 this.ServerScriptPath = Path.Combine(tempPath, "SugoiOfflineTranslatorServer.py");
                 File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
             }
-
-            this.StartProcess();
         }
 
         public void Dispose()
@@ -122,7 +99,7 @@ namespace SugoiOfflineTranslator
             {
                 string cuda = this.EnableCuda ? "cuda" : "nocuda";
 
-                XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tTranslatorsDir: {this.TranslatorPath}\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
+                XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
 
                 this.process = new Process();
                 this.process.StartInfo = new ProcessStartInfo()
@@ -200,6 +177,11 @@ namespace SugoiOfflineTranslator
 
         public override IEnumerator OnBeforeTranslate(IHttpTranslationContext context)
         {
+            if (this.process == null)
+            {
+                this.StartProcess();
+            }
+
             while (!isReady) yield return null;
         }
 
