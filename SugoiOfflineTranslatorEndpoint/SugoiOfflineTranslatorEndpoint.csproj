@@ -59,9 +59,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="HttpWorker\HttpRequestWorker.cs" />
-    <Compile Include="HttpWorker\HttpWorker.cs" />
-    <Compile Include="HttpWorker\XUATHttpWorker.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
