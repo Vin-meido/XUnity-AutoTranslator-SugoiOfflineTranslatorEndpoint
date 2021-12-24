@@ -55,7 +55,7 @@ The translator endpoint may be updated by just extracting / overwriting the old 
 
 ### Versions older than 1.4.0
 
-Versions prior to 1.4.0 had an optional instruction to install XUATHooks. As of XUAT 4.21.0 / endpoint version 1.4.0, this is no longer needed. Remove the old XUATHooks dll when updating.
+Versions prior to 1.4.0 had an optional instruction to install XUATHooks. As of XUAT 4.21.0 / endpoint version 1.4.0, this is no longer needed. Remove the old XUATHooks dll when updating, and then set `EnableShortDelay` to `True` in the updated configuration.
 
 ### Versions older than 1.2.0
 
