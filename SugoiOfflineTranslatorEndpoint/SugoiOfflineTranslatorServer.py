@@ -11,6 +11,7 @@ from flask_cors import CORS, cross_origin
 import time
 import json
 import re
+from functools import lru_cache
 from logging import getLogger
 
 from fairseq.models.transformer import TransformerModel
@@ -80,6 +81,7 @@ def shutdown_server():
     func()
 
 
+@lru_cache
 def translate(content):
     filter_line, isBracket = pre_translate_filter(content)
     result = ja2en.translate(filter_line)
