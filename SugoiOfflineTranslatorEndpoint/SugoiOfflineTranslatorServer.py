@@ -81,12 +81,23 @@ def shutdown_server():
     func()
 
 
+JP_TEXT_PATTERN = re.compile("[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f]")
+
 @lru_cache
 def translate(content):
-    filter_line, isBracket = pre_translate_filter(content)
+    if not JP_TEXT_PATTERN.search(content):
+        LOG.warn(f"Content [{content}] does not seem to have jp characters, skipping translation")
+        return content
+
+    filter_line, isBracket, isPeriod = pre_translate_filter(content)
     result = ja2en.translate(filter_line)
     result = post_translate_filter(result)
+    
+    if result.endswith(".") and not result.endswith("...") and not isPeriod and not isBracket:
+        result = result[:-1]
+    
     result = add_double_quote(result, isBracket)
+    
     return result
 
 
@@ -97,13 +108,14 @@ def pre_translate_filter(data):
     data = data.strip()
 
     isBracket = data.endswith("」") and data.startswith('「')
+    isPeriod = data.endswith("。")
 
-    return data, isBracket
+    return data, isBracket, isPeriod
 
 
 def post_translate_filter(data):
-    text = data.strip()
-    text = text.replace('<unk>', '')
+    text = data
+    text = text.replace('<unk>', ' ')
     # text = text.replace('―', '-')
     
     start = text[0]
@@ -117,6 +129,9 @@ def post_translate_filter(data):
 
     if end in end_quotes:
         text = text[:-1]
+
+    text = text.strip()
+    text = text[0].upper() + text[1:]
 
     return text
 
