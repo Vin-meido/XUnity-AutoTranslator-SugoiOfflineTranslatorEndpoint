@@ -47,6 +47,10 @@ namespace SugoiOfflineTranslator
         
         private bool EnableCuda { get; set; }
 
+        private bool EnableShortDelay { get; set; }
+
+        private bool DisableSpamChecks { get; set; }
+
         private bool LogServerMessages { get; set; }
 
         private string PythonExePath
@@ -68,7 +72,10 @@ namespace SugoiOfflineTranslator
             this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
             this.ServerScriptPath = context.GetOrCreateSetting("SugoiOfflineTranslator", "CustomServerScriptPath", "");
             this.maxTranslationsPerRequest = context.GetOrCreateSetting("SugoiOfflineTranslator", "MaxBatchSize", 10);
+            this.EnableShortDelay = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableShortDelay", true);
+            this.DisableSpamChecks = context.GetOrCreateSetting("SugoiOfflineTranslator", "DisableSpamChecks", true);
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
+
 
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
             {
@@ -80,6 +87,16 @@ namespace SugoiOfflineTranslator
                 var tempPath = Path.GetTempPath();
                 this.ServerScriptPath = Path.Combine(tempPath, "SugoiOfflineTranslatorServer.py");
                 File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
+            }
+
+            if (this.EnableShortDelay)
+            {
+                context.SetTranslationDelay(0.1f);
+            }
+
+            if (this.DisableSpamChecks)
+            {
+                context.DisableSpamChecks();
             }
 
             var configuredEndpoint = context.GetOrCreateSetting<string>("Service", "Endpoint");
@@ -185,11 +202,6 @@ namespace SugoiOfflineTranslator
             json["batch"] = context.UntranslatedTexts;
             json["message"] = "translate batch";
             var data = json.ToString();
-
-            var url = GetUrlEndpoint();
-            var uri = new Uri(url);
-            var servicepoint = ServicePointManager.FindServicePoint(uri);
-            XuaLogger.AutoTranslator.Info($"OnCreateWebRequest {uri} active connections {servicepoint.CurrentConnections}");
 
             var request = new XUnityWebRequest("POST", GetUrlEndpoint(), data);
             request.Headers["Content-Type"] = "application/json";

@@ -14,11 +14,6 @@
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
   </PropertyGroup>
-  <!--
-  <PropertyGroup Condition=" '$(Configuration)' == 'Release-ilcpp' ">
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-  </PropertyGroup>
-  -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
@@ -38,15 +33,7 @@
     <WarningLevel>4</WarningLevel>
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release-ilcpp|AnyCPU'">
-    <OutputPath>..\build\Release-ilcpp\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <LangVersion>7.3</LangVersion>
-    <ErrorReport>prompt</ErrorReport>
-  </PropertyGroup>
+
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="XUnity.AutoTranslator.Plugin.Core">
@@ -58,6 +45,7 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
+  
   <ItemGroup>
     <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>

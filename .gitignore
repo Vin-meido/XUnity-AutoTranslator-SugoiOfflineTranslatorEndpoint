@@ -338,7 +338,6 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
-/libs/XUnity.AutoTranslator.Plugin.Core.dll
-/libs/XUnity.Common.dll
-/libs/ilcpp/XUnity.AutoTranslator.Plugin.Core.dll
-/libs/ilcpp/XUnity.Common.dll
+
+/libs
+/build
