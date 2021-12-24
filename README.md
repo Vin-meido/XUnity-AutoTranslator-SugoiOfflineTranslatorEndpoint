@@ -13,6 +13,8 @@ Even so, unless you already use SugoiTranslator (and its offline model), you mig
 
 ## Requirements
 
+XUnity.AutoTranslator 4.21.0
+
 SugoiTranslator's offline mode recommends at least 8GB of RAM. Make sure you have that + the amount of memory the game you're running also requires.
 
 CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX series).
@@ -28,30 +30,56 @@ CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX ser
 
 For **UnityInjector** via ReiPatcher or Sybaris, just download and place `SugoiOfflineTranslator.dll` file in your XUAT translators directory.
 
-For **BepInEx 5.4**, download SugoiOfflineTranslator-BepInEx-5.4.zip and extract to your game directory.
+For **BepInEx**, download SugoiOfflineTranslator-BepInEx.zip and extract to your game directory.
 
-For **Unity ILC2PP games via BepInEx bleeding edge**, extract `SugoiOfflineTranslator-BepInEx-6-ilcpp.zip` to your game directory. This requires the bleeding edge versions of BepInEx as well as the latest XUAT targetting IL2CPP (see https://github.com/bbepis/XUnity.AutoTranslator/issues/159).
 
-3. Backup your XUAT configuration file (`AutoTranslatorConfig.ini`). After you have a backup copy, edit the configuration and change the `Endpoint` setting to `SugoiOfflineTranslator`.  Your `[Service]` section should look like this:
+3. Run your game once to generate/update the XUAT configuration file. Once the game has run and initialized properly, exit the game.
+
+4. Backup your XUAT configuration file (`AutoTranslatorConfig.ini`). After you have a backup copy, edit the configuration and change the `Endpoint` setting to `SugoiOfflineTranslator`.  Your `[Service]` section should look like this:
 ```
 [Service]
 Endpoint=SugoiOfflineTranslator
 FallbackEndpoint=
 ```
 
-4. Add the following additional settings at the end of the configuration:
-
-```
-[SugoiOfflineTranslator]
-InstallPath=
-ServerPort=14367
-EnableCuda=False
-MaxBatchSize=10
-```
-
-Set the `InstallPath` setting to the full path where Sugoi Translator is installed/extracted.  This folder is the folder that contains the various `.bat` batch files to start the different translator modes.
+5. Go to the `[SugoiOfflineTranslator]` section of the configuration and set the `InstallPath` setting to the full path where Sugoi Translator is installed/extracted.  This folder is the folder that contains the various `.bat` batch files to start the different translator modes.
 
 If you installed the CUDA update, set `EnableCuda` to `True` and increase `MaxBatchSize` to a larger value (e.g. `100`)
+
+Optionally, if you want the translations to reflect faster, set `EnableShortDelay` to `True`.
+
+
+## Updating
+
+The translator endpoint may be updated by just extracting / overwriting the old plugin based on your installation. Though there may be additional steps based on what version you are upgrading from:
+
+### Versions older than 1.4.0
+
+Versions prior to 1.4.0 had an optional instruction to install XUATHooks. As of XUAT 4.21.0 / endpoint version 1.4.0, this is no longer needed. Remove the old XUATHooks dll when updating.
+
+### Versions older than 1.2.0
+
+Versions prior to 1.2.0 had instructions to extract SugoiOfflineTranslatorServer.py together with the translator dll. This is no longer needed and removing the old server.py file can be done.
+
+
+## Configuration
+
+`InstallPath`: The location of your Sugoi Translator install. This must be set to the folder that contains the various `.bat` batch files to start the different translator modes.
+
+`ServerPort`: Dedicated port to use for the endpoint. The plugin starts its own offline backend server using this port, which must differ from the standard port used by SugoiTranslator to avoid conflicts. The default value set here during installation should be fine.
+
+`EnableCuda`: Enables CUDA / graphics card acceleration for translation. Set to True if you installed the CUDA extensions for Sugoi Translator
+
+`MaxBatchSize`: Sets the maximum amount of untranslated lines to send to the translator per batch. If your pc specifications can handle it, you can set it to a high value (100). However, the default should work fine in most cases.
+
+`CustomServerScriptPath`: Sets the custom script server to use if you want to use your own or customize the backend server script.
+
+`LogServerMessages`: Logs the backend server's messages into the console of your game (if your loader has it enabled). Useful when reporting a problem (or when you want to see how fast each line is getting translated).
+
+`EnableShortDelay`: Reduces the 0.9s delay used by XUAT to throttle translation requests. This results in making the translations reflect faster (if your pc can handle it). If your game has scrolling text (e.g. dialog/message windows), make sure to set them to as fast as possible to avoid sending multiple requests for partial text. Disable this if you are having issues with fast scrolling / changing text.
+
+`DisableSpamChecks`: Disables the general spam checks associated with online translators (since this is an offline backend, we don't necessarily need it). If your pc cannot handle too many translations requests, you can disable this, but the default should be fine for most setups.
+
 
 ## Usage
 
