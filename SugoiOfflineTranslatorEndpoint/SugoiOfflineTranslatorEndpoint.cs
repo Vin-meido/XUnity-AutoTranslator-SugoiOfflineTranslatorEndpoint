@@ -18,7 +18,7 @@ namespace SugoiOfflineTranslator
     {
         public override string Id => "SugoiOfflineTranslator";
 
-        public override string FriendlyName => "Sugoi offline translator endpoint";
+        public override string FriendlyName => "Sugoi Offline Translator";
 
         //public override int MaxConcurrency => 1;
         int maxTranslationsPerRequest { get; set; } = 100;
