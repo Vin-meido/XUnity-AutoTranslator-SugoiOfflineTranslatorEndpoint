@@ -14,7 +14,7 @@ using SugoiOfflineTranslator.SimpleJSON;
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
+    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable
     {
         public override string Id => "SugoiOfflineTranslator";
 
@@ -146,18 +146,6 @@ namespace SugoiOfflineTranslator
             }
         }
 
-        public void Update()
-        {
-            if (this.isStarted && !this.isDisposing)
-            {
-                if(this.process.HasExited)
-                {
-                    XuaLogger.AutoTranslator.Warn($"Translator server process exited unexpectedly [status {process.ExitCode}]");
-                    this.isStarted = false;
-                }
-            }
-        }
-
         void ServerDataReceivedEventHandler(object sender, DataReceivedEventArgs args)
         {
             if (this.LogServerMessages)
@@ -187,6 +175,20 @@ namespace SugoiOfflineTranslator
 
         public override IEnumerator OnBeforeTranslate(IHttpTranslationContext context)
         {
+            if (this.isStarted && this.process.HasExited)
+            {
+                this.isStarted = false;
+                this.isReady = false;
+
+                XuaLogger.AutoTranslator.Warn($"Translator server process exited unexpectedly [status {process.ExitCode}]");
+            }
+
+            if (!this.isStarted && !this.isDisposing)
+            {
+                XuaLogger.AutoTranslator.Warn($"Translator server process not running. Starting...");
+                this.StartProcess();
+            }
+
             while (!isReady) yield return null;
         }
 
