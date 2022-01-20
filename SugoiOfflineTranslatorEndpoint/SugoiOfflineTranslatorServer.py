@@ -27,6 +27,7 @@ ja2en = TransformerModel.from_pretrained(
     target_lang = "en",
     bpe='sentencepiece',
     sentencepiece_model='./fairseq/spmModels/spm.ja.nopretok.model',
+    no_repeat_ngram_size=3,
     # is_gpu=True
 )
 
