@@ -3,6 +3,7 @@ import sys
 
 fairseq_install_path = os.path.join(os.getcwd(), 'fairseq')
 sys.path.insert(0, fairseq_install_path)
+sys.stdout.reconfigure(encoding='utf-8')
 
 from flask import Flask
 from flask import request
@@ -11,13 +12,32 @@ from flask_cors import CORS, cross_origin
 import time
 import json
 import re
+
 from functools import lru_cache
 from logging import getLogger
+from logging.config import dictConfig
 
 from fairseq.models.transformer import TransformerModel
 
 
-LOG = getLogger("server")
+dictConfig({
+    'version': 1,
+    'formatters': {'default': {
+        'format': 'SugoiSrv[%(levelname)s] %(message)s',
+    }},
+    'handlers': {'wsgi': {
+        'class': 'logging.StreamHandler',
+        'stream': 'ext://sys.stdout',
+        'formatter': 'default'
+    }},
+    'root': {
+        'level': 'INFO',
+        'handlers': ['wsgi']
+    }
+})
+
+
+LOG = getLogger("root")
 
 
 ja2en = TransformerModel.from_pretrained(
@@ -83,6 +103,7 @@ def shutdown_server():
 
 
 JP_TEXT_PATTERN = re.compile("[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f]")
+PLACEHOLDER_PATTERN = re.compile(r"ZM(?P<word>[A-Z])Z")
 
 @lru_cache
 def translate(content):
@@ -90,8 +111,10 @@ def translate(content):
         LOG.warn(f"Content [{content}] does not seem to have jp characters, skipping translation")
         return content
 
-    filter_line, isBracket, isPeriod = pre_translate_filter(content)
+    filter_line, isBracket, isPeriod, replacements = pre_translate_filter(content)
+
     result = ja2en.translate(filter_line)
+    result = restore_placeholders(result, replacements)
     result = post_translate_filter(result)
     
     if result.endswith(".") and not result.endswith("...") and not isPeriod and not isBracket:
@@ -99,7 +122,34 @@ def translate(content):
     
     result = add_double_quote(result, isBracket)
     
+    LOG.info(f"{content} => {result}")
     return result
+
+
+def filter_placeholders(text):
+    replacements = []
+    old = text
+
+    for match in PLACEHOLDER_PATTERN.finditer(text):
+        word = match.group("word")
+        whole = match.group()
+        replacement = f"@#{word}"
+        if replacement not in text:
+            replacements.append((whole, replacement))
+
+    for whole, replacement in replacements:
+        text = text.replace(whole, replacement)
+
+    if replacements:    
+        LOG.info(f"Replaced placholders:[{old}] => [{text}]")
+
+    return text, replacements
+
+
+def restore_placeholders(text, replacements):
+    for whole, replacement in replacements:
+        text = text.replace(replacement, whole)
+    return text
 
 
 def pre_translate_filter(data):
@@ -110,8 +160,9 @@ def pre_translate_filter(data):
 
     isBracket = data.endswith("」") and data.startswith('「')
     isPeriod = data.endswith("。")
+    data, replacements = filter_placeholders(data)
 
-    return data, isBracket, isPeriod
+    return data, isBracket, isPeriod, replacements
 
 
 def post_translate_filter(data):
