@@ -13,7 +13,7 @@ Even so, unless you already use SugoiTranslator (and its offline model), you mig
 
 ## Requirements
 
-XUnity.AutoTranslator 4.21.0
+XUnity.AutoTranslator 4.21.0 or newer.
 
 SugoiTranslator's offline mode recommends at least 8GB of RAM. Make sure you have that + the amount of memory the game you're running also requires.
 
@@ -46,7 +46,14 @@ FallbackEndpoint=
 
 If you installed the CUDA update, set `EnableCuda` to `True` and increase `MaxBatchSize` to a larger value (e.g. `100`)
 
-Optionally, if you want the translations to reflect faster, set `EnableShortDelay` to `True`.
+Optionally, if you want the translations to reflect faster, set `EnableShortDelay` to `True`. There's a bunch more configuration options you can set (refer to the configuration section for details on what they do)
+
+
+## Usage
+
+Just run the game. Do not run the SugoiTranslator's offline mode batch script, as the endpoint starts its own version of the server.
+
+Once the game is running you can press `Alt`+`0` to bring up the XUAT panel to confirm that you've configured the endpoint properly and if it's translating.
 
 
 ## Updating
@@ -79,8 +86,3 @@ Versions prior to 1.2.0 had instructions to extract SugoiOfflineTranslatorServer
 `EnableShortDelay`: Reduces the 0.9s delay used by XUAT to throttle translation requests. This results in making the translations reflect faster (if your pc can handle it). If your game has scrolling text (e.g. dialog/message windows), make sure to set them to as fast as possible to avoid sending multiple requests for partial text. Disable this if you are having issues with fast scrolling / changing text.
 
 `DisableSpamChecks`: Disables the general spam checks associated with online translators (since this is an offline backend, we don't necessarily need it). If your pc cannot handle too many translations requests, you can disable this, but the default should be fine for most setups.
-
-
-## Usage
-
-Just run the game. Do not run the SugoiTranslator's offline mode batch script, as the endpoint starts its own version of the server.
