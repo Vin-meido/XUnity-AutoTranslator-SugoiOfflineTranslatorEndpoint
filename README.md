@@ -22,16 +22,13 @@ CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX ser
 
 ## Installation
 
+**Important**: This assumes you already have a unity loader and XUAT setup properly working. If you are starting from scratch, look at the XUAT installation instructions first (https://github.com/bbepis/XUnity.AutoTranslator#installation) and get that working with the default translators before proceeding.
+
 1. Install Sugoi Translator if you havent yet, and install the Offline Model. See the youtube (https://www.youtube.com/watch?v=r8xFzVbmo7k) for details on installation and setup. Make sure you have a working translator first by running the offline translator script `Sugoi-Translator-Offline (click here).bat`
 
 **optional**: If you have a recent nvidia graphics card (10xx, RTX series), you can also install the Cuda update from their discord (https://discord.com/channels/778778890239344641/795551389211164703/902472195710779394) for faster translations. Check included docs in the package for install instructions of this update. Make sure that's working as well before continuing.
 
-2. Get the latest release zip or dll applicable for your setup:
-
-For **UnityInjector** via ReiPatcher or Sybaris, just download and place `SugoiOfflineTranslator.dll` file in your XUAT translators directory.
-
-For **BepInEx**, download SugoiOfflineTranslator-BepInEx.zip and extract to your game directory.
-
+2. Get the latest `SugoiOfflineTranslator.dll` file from the latest release: https://github.com/Vin-meido/XUnity-AutoTranslator-SugoiOfflineTranslatorEndpoint/releases/latest/. Save it in XUAT's `Translators` folder. The location of this folder depends on the loader you are using to use for XUAT. Consult XUAT's installation instructions as to where to expect this folder is located at.
 
 3. Run your game once to generate/update the XUAT configuration file. Once the game has run and initialized properly, exit the game.
 
