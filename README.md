@@ -22,7 +22,7 @@ CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX ser
 
 ## Installation
 
-**Important**: This assumes you already have a unity loader and XUAT setup properly working. If you are starting from scratch, look at the XUAT installation instructions first (https://github.com/bbepis/XUnity.AutoTranslator#installation) and get that working with the default translators before proceeding.
+0. Install XUAT. See https://github.com/bbepis/XUnity.AutoTranslator#installation for installation instructions, and then get that working with the default translators before proceeding.
 
 1. Install Sugoi Translator if you havent yet, and install the Offline Model. See the youtube (https://www.youtube.com/watch?v=r8xFzVbmo7k) for details on installation and setup. Make sure you have a working translator first by running the offline translator script `Sugoi-Translator-Offline (click here).bat`
 
