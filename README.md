@@ -13,7 +13,7 @@ Even so, unless you already use SugoiTranslator (and its offline model), you mig
 
 ## Requirements
 
-XUnity.AutoTranslator 4.21.0 or newer.
+XUnity.AutoTranslator 5.0.0 or newer.
 
 SugoiTranslator's offline mode recommends at least 8GB of RAM. Make sure you have that + the amount of memory the game you're running also requires.
 
