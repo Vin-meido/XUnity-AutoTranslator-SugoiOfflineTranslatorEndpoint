@@ -12,6 +12,7 @@ from flask_cors import CORS, cross_origin
 import time
 import json
 import re
+import argparse
 
 from functools import lru_cache
 from logging import getLogger
@@ -40,16 +41,57 @@ dictConfig({
 LOG = getLogger("root")
 
 
-ja2en = TransformerModel.from_pretrained(
-    './fairseq/japaneseModel/',
-    checkpoint_file='big.pretrain.pt',
-    source_lang = "ja",
-    target_lang = "en",
-    bpe='sentencepiece',
-    sentencepiece_model='./fairseq/spmModels/spm.ja.nopretok.model',
-    no_repeat_ngram_size=3,
-    # is_gpu=True
-)
+class TranslateBackendBase:
+    def translate(self, s):
+        raise NotImplementedError()
+
+
+class FairseqTranslateBackend(TranslateBackendBase):
+    def __init__(self, settings):
+        LOG.info("Setting up fairseq translation backend")
+        self.transformer = TransformerModel.from_pretrained(
+            settings.fairseq_data_dir,
+            checkpoint_file=settings.fairseq_model,
+            source_lang = "ja",
+            target_lang = "en",
+            bpe='sentencepiece',
+            sentencepiece_model='./fairseq/spmModels/spm.ja.nopretok.model',
+            no_repeat_ngram_size=3,
+            # is_gpu=True
+        )
+        
+        if settings.cuda:
+            LOG.info("Enabling cuda")
+            self.transformer.cuda()
+
+    def translate(self, s):
+        return self.transformer.translate(s)
+
+
+class Ctranslate2TranslateBackend(TranslateBackendBase):
+    def __init__(self, settings):
+        LOG.info("Setting up ctranslate2 translation backend")
+        import sentencepiece as spm
+        import ctranslate2
+
+        self.source_spm = spm.SentencePieceProcessor("./fairseq/spmModels/spm.ja.nopretok.model")
+        self.target_spm = spm.SentencePieceProcessor("./fairseq/spmModels/spm.en.nopretok.model")
+
+        device = "cuda" if settings.cuda else "cpu"
+        self.translator = ctranslate2.Translator(
+            model_path=settings.ctranslate2_data_dir,
+            device=device)
+
+    def translate(self, s):
+        line = self.source_spm.encode(s, out_type=str)
+        results = self.translator.translate_batch(
+            [line],
+            normalize_scores=True,
+            allow_early_exit=False)
+        return self.target_spm.decode(results[0].hypotheses)[0]
+
+
+ja2en = None
 
 app = Flask(__name__)
 
@@ -58,7 +100,6 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 @app.route("/", methods = ['POST'])
 @cross_origin()
-
 def sendImage():
     tic = time.perf_counter()
     data = request.get_json()
@@ -104,6 +145,7 @@ def shutdown_server():
 
 JP_TEXT_PATTERN = re.compile("[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff\uff66-\uff9f]")
 PLACEHOLDER_PATTERN = re.compile(r"ZM(?P<word>[A-Z])Z")
+
 
 @lru_cache
 def translate(content):
@@ -196,18 +238,44 @@ def add_double_quote(data, isBracket):
     return en_text
 
 
-if __name__ == "__main__":
+def parse_commandline_args():
+    parser = argparse.ArgumentParser(description="SugoiOfflineTranslator backend server")
+    parser.add_argument('port', type=int,
+                        help="The port to listen to")
+    parser.add_argument('--fairseq-data-dir', type=str, default="./fairseq/japaneseModel/",
+                        help="directory containing the fairseq pretrained models and related files")
+    parser.add_argument('--fairseq-model', type=str, default="big.pretrain.pt",
+                        help="Name of the pretrained model to use")
+    parser.add_argument('--cuda', action="store_true",
+                        help="Run translations on the GPU via CUDA")
+    parser.add_argument('--ctranslate2', action="store_true",
+                        help="Enables the use of ctranslate2 instead of fairseq")
+    parser.add_argument('--ctranslate2-data-dir', type=str, default="./fairseq/japaneseModel-ctranslate2/",
+                        help="Directory to use for ctranslate2 model")
+    parser.add_argument('--ctranslate2-auto-convert', action="store_true",
+                        help="Automatically convert fairseq model if the ctranslate2 data dir does not yet exist")
+
+    return parser.parse_args()
+
+
+def main():
+    global ja2en
+
+    args = parse_commandline_args()
+
     # monkey patch cli banner
     from flask import cli
     cli.show_server_banner = lambda *_: None
 
-    port = int(sys.argv[1])
-    cuda = (sys.argv[2] == "cuda")
+    if not args.ctranslate2:
+        ja2en = FairseqTranslateBackend(args)
+    else:
+        ja2en = Ctranslate2TranslateBackend(args)
 
-    if cuda:
-        LOG.info(f"Enabling cuda")
-        ja2en.cuda()
+    LOG.info(f"Running server on port {args.port}")
+    app.run(host='127.0.0.1', port=args.port)
 
-    LOG.info(f"Running server on port {port}")
-    app.run(host='127.0.0.1', port=port)
+
+if __name__ == "__main__":
+    main()
 

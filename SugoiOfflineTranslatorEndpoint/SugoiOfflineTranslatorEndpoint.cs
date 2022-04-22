@@ -53,6 +53,8 @@ namespace SugoiOfflineTranslator
 
         private bool LogServerMessages { get; set; }
 
+        private bool EnableCTranslate2 { get; set; }
+
         private string PythonExePath
         {
             get
@@ -76,6 +78,7 @@ namespace SugoiOfflineTranslator
             this.DisableSpamChecks = context.GetOrCreateSetting("SugoiOfflineTranslator", "DisableSpamChecks", true);
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
+            this.EnableCTranslate2 = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCTranslate2", false);
 
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
             {
@@ -121,7 +124,8 @@ namespace SugoiOfflineTranslator
         {
             if (this.process == null || this.process.HasExited)
             {
-                string cuda = this.EnableCuda ? "cuda" : "nocuda";
+                string cuda = this.EnableCuda ? "--cuda" : "";
+                string ctranslate = this.EnableCTranslate2 ? "--ctranslate2" : "";
 
                 XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
 
@@ -129,7 +133,7 @@ namespace SugoiOfflineTranslator
                 this.process.StartInfo = new ProcessStartInfo()
                 {
                     FileName = this.PythonExePath,
-                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda}",
+                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda} {ctranslate}",
                     WorkingDirectory = this.ServerExecPath,
                     UseShellExecute = false,
                     RedirectStandardError = true,
