@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections;
 using System.Text;
 using System.Diagnostics;
@@ -32,12 +33,7 @@ namespace SugoiOfflineTranslator
 
         private string ServerScriptPath { get; set; }
 
-        private string ServerExecPath
-        {
-            get {
-                return Path.Combine(this.SugoiInstallPath, "backendServer\\Program-Backend\\Sugoi-Translator-Offline\\offlineTranslation");
-            }
-        }
+        private string ServerExecPath { get; set; }
 
         //private string ServerPort => 14366;
         private string ServerPort { get; set; }
@@ -55,13 +51,7 @@ namespace SugoiOfflineTranslator
 
         private bool EnableCTranslate2 { get; set; }
 
-        private string PythonExePath
-        {
-            get
-            {
-                return Path.Combine(this.SugoiInstallPath, "Power-Source\\Python38\\python.exe");
-            }
-        }
+        private string PythonExePath { get; set; }
 
         public override void Initialize(IInitializationContext context)
         {
@@ -80,10 +70,35 @@ namespace SugoiOfflineTranslator
 
             this.EnableCTranslate2 = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCTranslate2", false);
 
+
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
             {
                 throw new Exception("need to specify InstallPath");
             }
+
+            var pythonExePathCandidates = new string[]
+            {
+                Path.Combine(this.SugoiInstallPath, "Power-Source\\Python38\\python.exe"),
+                Path.Combine(this.SugoiInstallPath, "Power-Source\\Python39\\python.exe"),
+            };
+
+            this.PythonExePath = pythonExePathCandidates.Where(p => File.Exists(p)).FirstOrDefault();
+            if (string.IsNullOrEmpty(this.PythonExePath))
+            {
+                throw new Exception("unable to find python power source (Python3x folder)");
+            }
+
+            var pythonServerExecPathCandidates = new string[]
+            {
+                Path.Combine(this.SugoiInstallPath, "backendServer\\Program-Backend\\Sugoi-Translator-Offline\\offlineTranslation"),
+                Path.Combine(this.SugoiInstallPath, "backendServer\\Program-Backend\\Sugoi-Japanese-Translator\\offlineTranslation")
+            };
+            this.ServerExecPath = pythonServerExecPathCandidates.Where(p => Directory.Exists(p)).FirstOrDefault();
+            if (string.IsNullOrEmpty(this.ServerExecPath))
+            {
+                throw new Exception("unable to find exec path (offlineTranslation folder)");
+            }
+
 
             if (string.IsNullOrEmpty(this.ServerScriptPath))
             {
