@@ -2,7 +2,7 @@
 
 Translation endpoint to support Sugoi Translator's offline translation backend (https://www.youtube.com/watch?v=r8xFzVbmo7k)
 
-Tested to support Sugoi Translator V3.0 with Offline Model V2.0.
+Tested to support Sugoi Translator V3.0 with Offline Model V2.0 and Japanese OCR Toolkit v1.6.
 
 The Sugoi Translator's offline model boasts comparability with Deepl translations, not to mention a shorter delay and nonexistent throttling limits.
 
@@ -19,12 +19,15 @@ SugoiTranslator's offline mode recommends at least 8GB of RAM. Make sure you hav
 
 CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX series).
 
+## A note on Japanese OCR Toolkit v1.6
+
+Sugoi Translator V3.0 used to come as a stand-alone installation. However, since Japanese OCR Toolkit v1.6, the translator has been included with the toolkit package. This endpoint works with either package (standalone Sugoi Translator or OCR Toolkit v1.6). Therefore, if you already have SugoiTranslator, you don't necessarily need to update to OCR Toolkit if the translator is working fine for you.
 
 ## Installation
 
 0. Install XUAT. See https://github.com/bbepis/XUnity.AutoTranslator#installation for installation instructions, and then get that working with the default translators before proceeding.
 
-1. Install Sugoi Translator if you havent yet, and install the Offline Model. See the youtube (https://www.youtube.com/watch?v=r8xFzVbmo7k) for details on installation and setup. Make sure you have a working translator first by running the offline translator script `Sugoi-Translator-Offline (click here).bat`
+1. Install Japanese OCR Toolkit. See https://www.youtube.com/watch?v=r8xFzVbmo7k for details on installation and setup. Make sure you have a working translator first by running the offline translator script `Sugoi-Translator-Offline (click here).bat`
 
 **optional**: If you have a recent nvidia graphics card (10xx, RTX series), you can also install the Cuda update from their discord (https://discord.com/channels/778778890239344641/795551389211164703/902472195710779394) for faster translations. Check included docs in the package for install instructions of this update. Make sure that's working as well before continuing.
 
