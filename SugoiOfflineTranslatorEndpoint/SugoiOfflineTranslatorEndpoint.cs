@@ -15,7 +15,7 @@ using SugoiOfflineTranslator.SimpleJSON;
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable
+    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
     {
         public override string Id => "SugoiOfflineTranslator";
 
@@ -50,6 +50,7 @@ namespace SugoiOfflineTranslator
         private bool LogServerMessages { get; set; }
 
         private bool EnableCTranslate2 { get; set; }
+        private bool EnableCTranslateAutoConvert { get; set; }
 
         private string PythonExePath { get; set; }
 
@@ -69,6 +70,7 @@ namespace SugoiOfflineTranslator
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
             this.EnableCTranslate2 = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCTranslate2", false);
+            this.EnableCTranslateAutoConvert = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCTranslateAutoConvert", false);
 
 
             if (string.IsNullOrEmpty(this.SugoiInstallPath))
@@ -141,6 +143,7 @@ namespace SugoiOfflineTranslator
             {
                 string cuda = this.EnableCuda ? "--cuda" : "";
                 string ctranslate = this.EnableCTranslate2 ? "--ctranslate2" : "";
+                string ctranslateconv = this.EnableCTranslateAutoConvert ? "--ctranslate2-auto-convert" : "";
 
                 XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
 
@@ -148,7 +151,7 @@ namespace SugoiOfflineTranslator
                 this.process.StartInfo = new ProcessStartInfo()
                 {
                     FileName = this.PythonExePath,
-                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda} {ctranslate}",
+                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda} {ctranslate} {ctranslateconv}",
                     WorkingDirectory = this.ServerExecPath,
                     UseShellExecute = false,
                     RedirectStandardError = true,
@@ -182,7 +185,10 @@ namespace SugoiOfflineTranslator
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();
-            yield return base.Translate(context);
+            var iterator = base.Translate(context);
+
+            while (iterator.MoveNext()) yield return iterator.Current;
+            
             var elapsed = stopwatch.Elapsed.TotalSeconds;
 
             if(LogServerMessages)
@@ -236,6 +242,12 @@ namespace SugoiOfflineTranslator
             var data = context.Response.Data;
             var result = JSON.Parse(data);
             context.Complete(result.AsStringList.ToArray());
+        }
+
+        
+        public void Update()
+        {
+            //XuaLogger.AutoTranslator.Info($"Sugoi update!");
         }
     }
 }
