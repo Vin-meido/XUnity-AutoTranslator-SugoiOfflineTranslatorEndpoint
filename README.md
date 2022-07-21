@@ -29,7 +29,7 @@ Sugoi Translator V3.0 used to come as a stand-alone installation. However, since
 
 1. Install Japanese OCR Toolkit. See https://www.youtube.com/watch?v=r8xFzVbmo7k for details on installation and setup. Make sure you have a working translator first by running the offline translator script `Sugoi-Translator-Offline (click here).bat`
 
-**optional**: If you have a recent nvidia graphics card (10xx, RTX series), you can also install the Cuda update from their discord (https://discord.com/channels/778778890239344641/795551389211164703/902472195710779394) for faster translations. Check included docs in the package for install instructions of this update. Make sure that's working as well before continuing.
+**optional**: If you have a recent nvidia graphics card (10xx, RTX series), you can also install the Cuda update from their discord (https://discord.com/channels/778778890239344641/906562033397407824) for faster translations. Make sure that's working as well before continuing.
 
 2. Get the latest `SugoiOfflineTranslator.dll` file from the latest release: https://github.com/Vin-meido/XUnity-AutoTranslator-SugoiOfflineTranslatorEndpoint/releases/latest/. Save it in XUAT's `Translators` folder. The location of this folder depends on the loader you are using to use for XUAT. Consult XUAT's installation instructions as to where to expect this folder is located at.
 
