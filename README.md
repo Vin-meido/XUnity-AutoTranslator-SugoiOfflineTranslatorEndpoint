@@ -2,9 +2,9 @@
 
 Translation endpoint to support Sugoi Translator's offline translation backend (https://www.youtube.com/watch?v=r8xFzVbmo7k)
 
-Tested to support Sugoi Translator V3.0 with Offline Model V2.0 and Japanese OCR Toolkit v1.6.
+Tested to support Sugoi Translation Toolkit V4.0.
 
-The Sugoi Translator's offline model boasts comparability with Deepl translations, not to mention a shorter delay and nonexistent throttling limits.
+The Sugoi Translator's offline model boasts comparability with Deepl translations, not to mention shorter translation delay and nonexistent throttling limits.
 
 Though just like any machine translators, there will be oddities and unexpected mistranslations. You're still better off using official/fan translations/localizations if those are available.
 
@@ -19,9 +19,6 @@ SugoiTranslator's offline mode recommends at least 8GB of RAM. Make sure you hav
 
 CUDA support requires an NVIDIA graphics card that supports it (GTX10xx, RTX series).
 
-## A note on Japanese OCR Toolkit v1.6
-
-Sugoi Translator V3.0 used to come as a stand-alone installation. However, since Japanese OCR Toolkit v1.6, the translator has been included with the toolkit package. This endpoint works with either package (standalone Sugoi Translator or OCR Toolkit v1.6). Therefore, if you already have SugoiTranslator, you don't necessarily need to update to OCR Toolkit if the translator is working fine for you.
 
 ## Installation
 
@@ -29,7 +26,7 @@ Sugoi Translator V3.0 used to come as a stand-alone installation. However, since
 
 1. Install Japanese OCR Toolkit. See https://www.youtube.com/watch?v=r8xFzVbmo7k for details on installation and setup. Make sure you have a working translator first by running the offline translator script `Sugoi-Translator-Offline (click here).bat`
 
-**optional**: If you have a recent nvidia graphics card (10xx, RTX series), you can also install the Cuda update from their discord (https://discord.com/channels/778778890239344641/906562033397407824) for faster translations. Make sure that's working as well before continuing.
+**optional**: If you wish to have faster translations, you can optionally install either or both CUDA and/or ctranslate2 support for sugoi. Check the Visual Novel OCR discord for setup instructions (https://discord.com/channels/778778890239344641/906562033397407824/1033742010118570074). Note that CUDA requires a compatible NVIDIA graphics card.
 
 2. Get the latest `SugoiOfflineTranslator.dll` file from the latest release: https://github.com/Vin-meido/XUnity-AutoTranslator-SugoiOfflineTranslatorEndpoint/releases/latest/. Save it in XUAT's `Translators` folder. The location of this folder depends on the loader you are using to use for XUAT. Consult XUAT's installation instructions as to where to expect this folder is located at.
 
@@ -42,16 +39,18 @@ Endpoint=SugoiOfflineTranslator
 FallbackEndpoint=
 ```
 
-5. Go to the `[SugoiOfflineTranslator]` section of the configuration and set the `InstallPath` setting to the full path where Sugoi Translator is installed/extracted.  This folder is the folder that contains the various `.bat` batch files to start the different translator modes.
+5. **(optional)** Go to the `[SugoiOfflineTranslator]` section of the configuration and set the `InstallPath` setting to the full path where Sugoi Translator is installed/extracted.  This folder is the folder that contains the various `.bat` batch files to start the different translator modes.
 
-If you installed the CUDA update, set `EnableCuda` to `True` and increase `MaxBatchSize` to a larger value (e.g. `100`)
+If you installed the CUDA support, set `EnableCuda` to `True` and increase `MaxBatchSize` to a larger value (e.g. `100`).
+
+If you installed ctranslate2 support, set `EnableCtranslate` to `True`.
 
 Optionally, if you want the translations to reflect faster, set `EnableShortDelay` to `True`. There's a bunch more configuration options you can set (refer to the configuration section for details on what they do)
 
 
 ## Usage
 
-Just run the game. Do not run the SugoiTranslator's offline mode batch script, as the endpoint starts its own version of the server.
+Run the game. If you set the `InstallPath` setting, do not run the SugoiTranslator's offline mode batch script, as the endpoint starts its own version of the server.
 
 Once the game is running you can press `Alt`+`0` to bring up the XUAT panel to confirm that you've configured the endpoint properly and if it's translating.
 
@@ -71,11 +70,13 @@ Versions prior to 1.2.0 had instructions to extract SugoiOfflineTranslatorServer
 
 ## Configuration
 
-`InstallPath`: The location of your Sugoi Translator install. This must be set to the folder that contains the various `.bat` batch files to start the different translator modes.
+`InstallPath`: The location of your Sugoi Translator install. When set, automatically starts the translation backend internally when you start the game. This must be set to the folder that contains the various `.bat` batch files to start the different translator modes.
 
-`ServerPort`: Dedicated port to use for the endpoint. The plugin starts its own offline backend server using this port, which must differ from the standard port used by SugoiTranslator to avoid conflicts. The default value set here during installation should be fine.
+`ServerPort`: Dedicated port to use for the internal backend endpoint.
 
 `EnableCuda`: Enables CUDA / graphics card acceleration for translation. Set to True if you installed the CUDA extensions for Sugoi Translator
+
+`EnableCTranslate2`: Enables ctranslate2 accelaration. Can be enabled without CUDA (sugoi needs to have ctranslate2 installed).
 
 `MaxBatchSize`: Sets the maximum amount of untranslated lines to send to the translator per batch. If your pc specifications can handle it, you can set it to a high value (100). However, the default should work fine in most cases.
 
