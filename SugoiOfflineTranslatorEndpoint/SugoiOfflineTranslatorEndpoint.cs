@@ -40,7 +40,9 @@ namespace SugoiOfflineTranslator
 
         //private string SugoiInstallPath => "G:\\Downloads\\Sugoi-Japanese-Translator-V3.0";
         private string SugoiInstallPath { get; set; }
-        
+
+        private bool UseExternalServer { get; set; } = false;
+
         private bool EnableCuda { get; set; }
 
         private bool EnableShortDelay { get; set; }
@@ -50,7 +52,6 @@ namespace SugoiOfflineTranslator
         private bool LogServerMessages { get; set; }
 
         private bool EnableCTranslate2 { get; set; }
-        private bool EnableCTranslateAutoConvert { get; set; }
 
         private string PythonExePath { get; set; }
 
@@ -70,14 +71,32 @@ namespace SugoiOfflineTranslator
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
             this.EnableCTranslate2 = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCTranslate2", false);
-            this.EnableCTranslateAutoConvert = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCTranslateAutoConvert", false);
 
 
-            if (string.IsNullOrEmpty(this.SugoiInstallPath))
+            if (this.EnableShortDelay)
             {
-                throw new Exception("need to specify InstallPath");
+                context.SetTranslationDelay(0.1f);
             }
 
+            if (this.DisableSpamChecks)
+            {
+                context.DisableSpamChecks();
+            }
+
+            if (!string.IsNullOrEmpty(this.SugoiInstallPath))
+            {
+                this.SetupServer(context);
+            } else
+            {
+                XuaLogger.AutoTranslator.Info($"Sugoi install path not configured. Either configure a path or start sugoi externally.");
+                this.UseExternalServer = true;
+                this.ServerPort = "14366";
+                this.maxTranslationsPerRequest = 1;
+            }
+        }
+
+        private void SetupServer(IInitializationContext context)
+        {
             var pythonExePathCandidates = new string[]
             {
                 Path.Combine(this.SugoiInstallPath, "Power-Source\\Python38\\python.exe"),
@@ -101,7 +120,6 @@ namespace SugoiOfflineTranslator
                 throw new Exception("unable to find exec path (offlineTranslation folder)");
             }
 
-
             if (string.IsNullOrEmpty(this.ServerScriptPath))
             {
                 var tempPath = Path.GetTempPath();
@@ -109,21 +127,12 @@ namespace SugoiOfflineTranslator
                 File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
             }
 
-            if (this.EnableShortDelay)
-            {
-                context.SetTranslationDelay(0.1f);
-            }
-
-            if (this.DisableSpamChecks)
-            {
-                context.DisableSpamChecks();
-            }
-
             var configuredEndpoint = context.GetOrCreateSetting<string>("Service", "Endpoint");
             if (configuredEndpoint == this.Id)
             {
                 this.StartProcess();
             }
+
         }
 
         public void Dispose()
@@ -143,7 +152,6 @@ namespace SugoiOfflineTranslator
             {
                 string cuda = this.EnableCuda ? "--cuda" : "";
                 string ctranslate = this.EnableCTranslate2 ? "--ctranslate2" : "";
-                string ctranslateconv = this.EnableCTranslateAutoConvert ? "--ctranslate2-auto-convert" : "";
 
                 XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
 
@@ -151,7 +159,7 @@ namespace SugoiOfflineTranslator
                 this.process.StartInfo = new ProcessStartInfo()
                 {
                     FileName = this.PythonExePath,
-                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda} {ctranslate} {ctranslateconv}",
+                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda} {ctranslate}",
                     WorkingDirectory = this.ServerExecPath,
                     UseShellExecute = false,
                     RedirectStandardError = true,
@@ -200,6 +208,11 @@ namespace SugoiOfflineTranslator
 
         public override IEnumerator OnBeforeTranslate(IHttpTranslationContext context)
         {
+            if (this.UseExternalServer)
+            {
+                yield break;
+            }
+
             if (this.isStarted && this.process.HasExited)
             {
                 this.isStarted = false;
@@ -225,9 +238,19 @@ namespace SugoiOfflineTranslator
         public override void OnCreateRequest(IHttpRequestCreationContext context)
         {
             var json = new JSONObject();
-            json["content"] = context.UntranslatedText;
-            json["batch"] = context.UntranslatedTexts;
-            json["message"] = "translate batch";
+
+            if (!this.UseExternalServer)
+            {
+                json["content"] = context.UntranslatedText;
+                json["batch"] = context.UntranslatedTexts;
+                json["message"] = "translate batch";
+            }
+            else
+            {
+                json["content"] = context.UntranslatedText;
+                json["message"] = "translate sentences";
+            }
+
             var data = json.ToString();
 
             var request = new XUnityWebRequest("POST", GetUrlEndpoint(), data);
@@ -241,7 +264,22 @@ namespace SugoiOfflineTranslator
         {
             var data = context.Response.Data;
             var result = JSON.Parse(data);
-            context.Complete(result.AsStringList.ToArray());
+            
+            if (!UseExternalServer)
+            {
+                context.Complete(result.AsStringList.ToArray());
+            }
+            else
+            {
+                if (result.IsString)
+                {
+                    context.Complete(result.Value);
+                }
+                else
+                {
+                    context.Fail($"Unexpected return from server: {data}");
+                }
+            }
         }
 
         

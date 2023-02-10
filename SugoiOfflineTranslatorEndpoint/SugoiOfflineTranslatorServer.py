@@ -74,8 +74,8 @@ class Ctranslate2TranslateBackend(TranslateBackendBase):
         import sentencepiece as spm
         import ctranslate2
 
-        self.source_spm = spm.SentencePieceProcessor("./fairseq/spmModels/spm.ja.nopretok.model")
-        self.target_spm = spm.SentencePieceProcessor("./fairseq/spmModels/spm.en.nopretok.model")
+        self.source_spm = spm.SentencePieceProcessor("./ct2/spmModels/spm.ja.nopretok.model")
+        self.target_spm = spm.SentencePieceProcessor("./ct2/spmModels/spm.en.nopretok.model")
 
         device = "cuda" if settings.cuda else "cpu"
         self.translator = ctranslate2.Translator(
@@ -84,10 +84,12 @@ class Ctranslate2TranslateBackend(TranslateBackendBase):
 
     def translate(self, s):
         line = self.source_spm.encode(s, out_type=str)
+        LOG.info(f'translating: {line}')
         results = self.translator.translate_batch(
             [line],
-            normalize_scores=True,
-            allow_early_exit=False)
+            beam_size=5,
+            num_hypotheses=1,
+            no_repeat_ngram_size=3)
         return self.target_spm.decode(results[0].hypotheses)[0]
 
 
@@ -250,10 +252,8 @@ def parse_commandline_args():
                         help="Run translations on the GPU via CUDA")
     parser.add_argument('--ctranslate2', action="store_true",
                         help="Enables the use of ctranslate2 instead of fairseq")
-    parser.add_argument('--ctranslate2-data-dir', type=str, default="./fairseq/japaneseModel-ctranslate2/",
+    parser.add_argument('--ctranslate2-data-dir', type=str, default="./ct2/ct2_models/",
                         help="Directory to use for ctranslate2 model")
-    parser.add_argument('--ctranslate2-auto-convert', action="store_true",
-                        help="Automatically convert fairseq model if the ctranslate2 data dir does not yet exist")
 
     return parser.parse_args()
 
