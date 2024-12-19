@@ -1,8 +1,6 @@
 import os
 import sys
 
-fairseq_install_path = os.path.join(os.getcwd(), 'fairseq')
-sys.path.insert(0, fairseq_install_path)
 sys.stdout.reconfigure(encoding='utf-8')
 
 from flask import Flask
@@ -17,9 +15,6 @@ import argparse
 from functools import lru_cache
 from logging import getLogger
 from logging.config import dictConfig
-
-from fairseq.models.transformer import TransformerModel
-
 
 dictConfig({
     'version': 1,
@@ -46,40 +41,18 @@ class TranslateBackendBase:
         raise NotImplementedError()
 
 
-class FairseqTranslateBackend(TranslateBackendBase):
-    def __init__(self, settings):
-        LOG.info("Setting up fairseq translation backend")
-        self.transformer = TransformerModel.from_pretrained(
-            settings.fairseq_data_dir,
-            checkpoint_file=settings.fairseq_model,
-            source_lang = "ja",
-            target_lang = "en",
-            bpe='sentencepiece',
-            sentencepiece_model='./fairseq/spmModels/spm.ja.nopretok.model',
-            no_repeat_ngram_size=3,
-            # is_gpu=True
-        )
-        
-        if settings.cuda:
-            LOG.info("Enabling cuda")
-            self.transformer.cuda()
-
-    def translate(self, s):
-        return self.transformer.translate(s)
-
-
 class Ctranslate2TranslateBackend(TranslateBackendBase):
     def __init__(self, settings):
-        LOG.info("Setting up ctranslate2 translation backend")
         import sentencepiece as spm
         import ctranslate2
 
-        self.source_spm = spm.SentencePieceProcessor("./ct2/spmModels/spm.ja.nopretok.model")
-        self.target_spm = spm.SentencePieceProcessor("./ct2/spmModels/spm.en.nopretok.model")
+        self.source_spm = spm.SentencePieceProcessor("./models/spmModels/spm.ja.nopretok.model")
+        self.target_spm = spm.SentencePieceProcessor("./models/spmModels/spm.en.nopretok.model")
 
         device = "cuda" if settings.cuda else "cpu"
+        LOG.info(f"Setting up ctranslate2 translation backend using device {device}")
         self.translator = ctranslate2.Translator(
-            model_path=settings.ctranslate2_data_dir,
+            model_path=settings.model_data_dir,
             device=device)
 
     def translate(self, s):
@@ -244,16 +217,10 @@ def parse_commandline_args():
     parser = argparse.ArgumentParser(description="SugoiOfflineTranslator backend server")
     parser.add_argument('port', type=int,
                         help="The port to listen to")
-    parser.add_argument('--fairseq-data-dir', type=str, default="./fairseq/japaneseModel/",
-                        help="directory containing the fairseq pretrained models and related files")
-    parser.add_argument('--fairseq-model', type=str, default="big.pretrain.pt",
-                        help="Name of the pretrained model to use")
     parser.add_argument('--cuda', action="store_true",
                         help="Run translations on the GPU via CUDA")
-    parser.add_argument('--ctranslate2', action="store_true",
-                        help="Enables the use of ctranslate2 instead of fairseq")
-    parser.add_argument('--ctranslate2-data-dir', type=str, default="./ct2/ct2_models/",
-                        help="Directory to use for ctranslate2 model")
+    parser.add_argument('--model-data-dir', type=str, default="./models/ct2Model",
+                        help="CT2 model directory")
 
     return parser.parse_args()
 
@@ -267,10 +234,7 @@ def main():
     from flask import cli
     cli.show_server_banner = lambda *_: None
 
-    if not args.ctranslate2:
-        ja2en = FairseqTranslateBackend(args)
-    else:
-        ja2en = Ctranslate2TranslateBackend(args)
+    ja2en = Ctranslate2TranslateBackend(args)
 
     LOG.info(f"Running server on port {args.port}")
     app.run(host='127.0.0.1', port=args.port)

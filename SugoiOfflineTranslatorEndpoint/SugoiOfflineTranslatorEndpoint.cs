@@ -15,7 +15,7 @@ using SugoiOfflineTranslator.SimpleJSON;
 
 namespace SugoiOfflineTranslator
 {
-    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable, IMonoBehaviour_Update
+    public class SugoiOfflineTranslatorEndpoint : HttpEndpoint, ITranslateEndpoint, IDisposable
     {
         public override string Id => "SugoiOfflineTranslator";
 
@@ -32,13 +32,13 @@ namespace SugoiOfflineTranslator
         private bool isReady = false;
 
         private string ServerScriptPath { get; set; }
+        private byte[] ServerScriptData { get; set; }
 
         private string ServerExecPath { get; set; }
 
         //private string ServerPort => 14366;
         private string ServerPort { get; set; }
 
-        //private string SugoiInstallPath => "G:\\Downloads\\Sugoi-Japanese-Translator-V3.0";
         private string SugoiInstallPath { get; set; }
 
         private bool UseExternalServer { get; set; } = false;
@@ -70,9 +70,6 @@ namespace SugoiOfflineTranslator
             this.DisableSpamChecks = context.GetOrCreateSetting("SugoiOfflineTranslator", "DisableSpamChecks", true);
             this.LogServerMessages = context.GetOrCreateSetting("SugoiOfflineTranslator", "LogServerMessages", false);
 
-            this.EnableCTranslate2 = context.GetOrCreateSetting("SugoiOfflineTranslator", "EnableCTranslate2", false);
-
-
             if (this.EnableShortDelay)
             {
                 context.SetTranslationDelay(0.1f);
@@ -86,7 +83,8 @@ namespace SugoiOfflineTranslator
             if (!string.IsNullOrEmpty(this.SugoiInstallPath))
             {
                 this.SetupServer(context);
-            } else
+            }
+            else
             {
                 XuaLogger.AutoTranslator.Info($"Sugoi install path not configured. Either configure a path or start sugoi externally.");
                 this.UseExternalServer = true;
@@ -95,36 +93,40 @@ namespace SugoiOfflineTranslator
             }
         }
 
+        private static string PathCandidate(string description, string prefix, string[] paths, bool optional=false)
+        {
+            string[] candidates = paths.Select(p => Path.Combine(prefix, p)).ToArray();
+            var existing = candidates.Where(p => File.Exists(p) || Directory.Exists(p)).FirstOrDefault();
+            if (existing != null)
+            {
+                return existing;
+            }
+            else
+            {
+                if (optional) return null;
+                throw new Exception($"Unable to find {description} at any of the following locations: {string.Join(", ", candidates)}");
+            }
+        }
+
         private void SetupServer(IInitializationContext context)
         {
-            var pythonExePathCandidates = new string[]
-            {
-                Path.Combine(this.SugoiInstallPath, "Power-Source\\Python38\\python.exe"),
-                Path.Combine(this.SugoiInstallPath, "Power-Source\\Python39\\python.exe"),
-            };
+            this.PythonExePath = PathCandidate(
+                "Python power source",
+                this.SugoiInstallPath,
+                new string[] { "Code\\Power-Source\\Python39\\python.exe" });
 
-            this.PythonExePath = pythonExePathCandidates.Where(p => File.Exists(p)).FirstOrDefault();
-            if (string.IsNullOrEmpty(this.PythonExePath))
-            {
-                throw new Exception("unable to find python power source (Python3x folder)");
-            }
-
-            var pythonServerExecPathCandidates = new string[]
-            {
-                Path.Combine(this.SugoiInstallPath, "backendServer\\Program-Backend\\Sugoi-Translator-Offline\\offlineTranslation"),
-                Path.Combine(this.SugoiInstallPath, "backendServer\\Program-Backend\\Sugoi-Japanese-Translator\\offlineTranslation")
-            };
-            this.ServerExecPath = pythonServerExecPathCandidates.Where(p => Directory.Exists(p)).FirstOrDefault();
-            if (string.IsNullOrEmpty(this.ServerExecPath))
-            {
-                throw new Exception("unable to find exec path (offlineTranslation folder)");
-            }
+            this.ServerExecPath = PathCandidate(
+                "Server exec path",
+                this.SugoiInstallPath,
+                new string[] { "Code\\backendServer\\Program-Backend\\Sugoi-Japanese-Translator\\offlineTranslation" });
 
             if (string.IsNullOrEmpty(this.ServerScriptPath))
             {
-                var tempPath = Path.GetTempPath();
-                this.ServerScriptPath = Path.Combine(tempPath, "SugoiOfflineTranslatorServer.py");
-                File.WriteAllBytes(this.ServerScriptPath, Properties.Resources.SugoiOfflineTranslatorServer);
+                this.ServerScriptData = Properties.Resources.SugoiOfflineTranslatorServer;
+            }
+            else
+            {
+                this.ServerScriptData = File.ReadAllBytes(this.ServerScriptPath);
             }
 
             var configuredEndpoint = context.GetOrCreateSetting<string>("Service", "Endpoint");
@@ -132,7 +134,6 @@ namespace SugoiOfflineTranslator
             {
                 this.StartProcess();
             }
-
         }
 
         public void Dispose()
@@ -151,28 +152,36 @@ namespace SugoiOfflineTranslator
             if (this.process == null || this.process.HasExited)
             {
                 string cuda = this.EnableCuda ? "--cuda" : "";
-                string ctranslate = this.EnableCTranslate2 ? "--ctranslate2" : "";
 
-                XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tScriptPath: {this.ServerScriptPath}");
+                XuaLogger.AutoTranslator.Info($"Running Sugoi Offline Translation server:\n\tExecPath: {this.ServerExecPath}\n\tPythonPath: {this.PythonExePath}\n\tCustomScriptPath: {this.ServerScriptPath}");
 
                 this.process = new Process();
                 this.process.StartInfo = new ProcessStartInfo()
                 {
                     FileName = this.PythonExePath,
-                    Arguments = $"\"{this.ServerScriptPath}\" {this.ServerPort} {cuda} {ctranslate}",
+                    Arguments = $" - {this.ServerPort} {cuda}",
                     WorkingDirectory = this.ServerExecPath,
                     UseShellExecute = false,
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
+                    RedirectStandardInput = true,
                 };
 
                 this.process.OutputDataReceived += this.ServerDataReceivedEventHandler;
                 this.process.ErrorDataReceived += this.ServerDataReceivedEventHandler;
 
                 this.process.Start();
+
+                using (var stream = this.process.StandardInput.BaseStream)
+                {
+                    stream.Write(this.ServerScriptData, 0, this.ServerScriptData.Length);
+                }
+
                 this.process.BeginErrorReadLine();
                 this.process.BeginOutputReadLine();
                 this.isStarted = true;
+
+
             }
         }
 
@@ -202,7 +211,6 @@ namespace SugoiOfflineTranslator
             if(LogServerMessages)
             {
                 XuaLogger.AutoTranslator.Info($"Translate complete {elapsed}s");
-
             }
         }
 
@@ -280,12 +288,6 @@ namespace SugoiOfflineTranslator
                     context.Fail($"Unexpected return from server: {data}");
                 }
             }
-        }
-
-        
-        public void Update()
-        {
-            //XuaLogger.AutoTranslator.Info($"Sugoi update!");
         }
     }
 }
