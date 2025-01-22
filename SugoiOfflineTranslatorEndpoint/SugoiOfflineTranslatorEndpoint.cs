@@ -165,6 +165,7 @@ namespace SugoiOfflineTranslator
                     RedirectStandardError = true,
                     RedirectStandardOutput = true,
                     RedirectStandardInput = true,
+                    CreateNoWindow = true,
                 };
 
                 this.process.OutputDataReceived += this.ServerDataReceivedEventHandler;
