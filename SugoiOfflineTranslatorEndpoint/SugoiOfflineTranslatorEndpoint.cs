@@ -118,7 +118,11 @@ namespace SugoiOfflineTranslator
             this.ServerExecPath = PathCandidate(
                 "Server exec path",
                 this.SugoiInstallPath,
-                new string[] { "Code\\backendServer\\Program-Backend\\Sugoi-Japanese-Translator\\offlineTranslation" });
+                new string[]
+                {
+                    "Code\\backendServer\\Modules\\Translation-API-Server\\Offline",
+                    "Code\\backendServer\\Program-Backend\\Sugoi-Japanese-Translator\\offlineTranslation"
+                });
 
             if (string.IsNullOrEmpty(this.ServerScriptPath))
             {

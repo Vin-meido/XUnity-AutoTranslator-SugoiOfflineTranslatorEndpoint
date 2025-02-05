@@ -46,8 +46,10 @@ class Ctranslate2TranslateBackend(TranslateBackendBase):
         import sentencepiece as spm
         import ctranslate2
 
-        self.source_spm = spm.SentencePieceProcessor("./models/spmModels/spm.ja.nopretok.model")
-        self.target_spm = spm.SentencePieceProcessor("./models/spmModels/spm.en.nopretok.model")
+        spm_model_dir = os.path.join(settings.model_data_dir, '..', 'spmModels')
+
+        self.source_spm = spm.SentencePieceProcessor(os.path.join(spm_model_dir, "spm.ja.nopretok.model"))
+        self.target_spm = spm.SentencePieceProcessor(os.path.join(spm_model_dir, "spm.en.nopretok.model"))
 
         device = "cuda" if settings.cuda else "cpu"
         LOG.info(f"Setting up ctranslate2 translation backend using device {device}")
@@ -219,7 +221,7 @@ def parse_commandline_args():
                         help="The port to listen to")
     parser.add_argument('--cuda', action="store_true",
                         help="Run translations on the GPU via CUDA")
-    parser.add_argument('--model-data-dir', type=str, default="./models/ct2Model",
+    parser.add_argument('--model-data-dir', type=str, default=None,
                         help="CT2 model directory")
 
     return parser.parse_args()
@@ -230,6 +232,18 @@ def main():
 
     args = parse_commandline_args()
 
+    if args.model_data_dir is None:
+        for root in ("models", "Sugoi_Model"):
+            test_dir = os.path.join(".", root, "ct2Model")
+            if os.path.exists(test_dir):
+                args.model_data_dir = test_dir
+                break
+    if args.model_data_dir is None:
+        LOG.error(f"Unable to find valid model data under {os.getcwd()}")
+        sys.exit(2)
+    if not os.path.exists(args.model_data_dir):
+        LOG.error(f"model data dir does not exist: {args.model_data_dir}")
+        sys.exit(3)
     # monkey patch cli banner
     from flask import cli
     cli.show_server_banner = lambda *_: None
@@ -237,6 +251,7 @@ def main():
     ja2en = Ctranslate2TranslateBackend(args)
 
     LOG.info(f"Running server on port {args.port}")
+    LOG.info(f" * model data dir '{args.model_data_dir}'")
     app.run(host='127.0.0.1', port=args.port)
 
 
