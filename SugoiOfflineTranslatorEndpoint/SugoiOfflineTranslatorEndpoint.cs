@@ -120,6 +120,9 @@ namespace SugoiOfflineTranslator
                 this.SugoiInstallPath,
                 new string[]
                 {
+                    // V17
+                    "Code\\backendServer\\Modules\\Translation-API-Server\\Offline_Japan",
+
                     // V11
                     "Code\\backendServer\\Modules\\Translation-API-Server\\Offline",
 
