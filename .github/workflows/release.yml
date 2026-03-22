@@ -23,15 +23,15 @@ jobs:
     #   with:
     #     dotnet-version: 8.0.x
 
-    # - name: Extract version from tag
-    #   id: get_version
-    #   shell: pwsh
-    #   run: |
-    #     $tag = "${{ github.ref_name }}"
-    #     $version = $tag -replace '^v', ''
-    #     echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-    #     echo "TAG=$tag" >> $env:GITHUB_OUTPUT
-    #     echo "Building version: $version"
+    - name: Extract version from tag
+      id: get_version
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = $tag -replace '^v', ''
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "TAG=$tag" >> $env:GITHUB_OUTPUT
+        echo "Building version: $version"
 
     # - name: Restore dependencies
     #   run: dotnet restore
