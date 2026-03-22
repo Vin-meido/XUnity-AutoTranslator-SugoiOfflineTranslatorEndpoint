@@ -1,0 +1,71 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v2.1.3, etc.
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for proper versioning
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+
+    - name: Extract version from tag
+      id: get_version
+      shell: pwsh
+      run: |
+        $tag = "${{ github.ref_name }}"
+        $version = $tag -replace '^v', ''
+        echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+        echo "TAG=$tag" >> $env:GITHUB_OUTPUT
+        echo "Building version: $version"
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Publish Release
+      run: |
+        dotnet publish `
+          --configuration Release `
+          --no-restore `
+          --output publish-output `
+          /p:Version=${{ steps.get_version.outputs.VERSION }} `
+          /p:AssemblyVersion=${{ steps.get_version.outputs.VERSION }} `
+          /p:FileVersion=${{ steps.get_version.outputs.VERSION }} `
+          /p:InformationalVersion=${{ steps.get_version.outputs.VERSION }}
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v2
+      with:
+        files: |
+          SugoiOfflineTranslator.dll
+        body: |
+          ## SugoiOfflineTranslator ${{ steps.get_version.outputs.TAG }}
+
+          ### Changes
+          See commit history for details.
+        draft: true
+        prerelease: ${{ contains(steps.get_version.outputs.VERSION, '-') }}
+        generate_release_notes: true
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: InOutAnimation-${{ steps.get_version.outputs.VERSION }}
+        path: SugoiOfflineTranslator.dll
+        retention-days: 90
