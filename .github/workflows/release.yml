@@ -54,6 +54,7 @@ jobs:
       run: |
         msbuild SugoiOfflineTranslator.sln `
           -t:rebuild `
+          -restore `
           -property:Configuration=Release `
           -property:OutputPath=publish-output `
           -property:Version=${{ steps.get_version.outputs.VERSION }} `

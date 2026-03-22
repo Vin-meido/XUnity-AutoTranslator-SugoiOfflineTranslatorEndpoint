@@ -30,4 +30,5 @@ jobs:
       uses: microsoft/setup-msbuild@v3
     - name: Build
       run: |
-        msbuild SugoiOfflineTranslator.sln -t:rebuild
+        msbuild SugoiOfflineTranslator.sln -t:rebuild -restore
+
