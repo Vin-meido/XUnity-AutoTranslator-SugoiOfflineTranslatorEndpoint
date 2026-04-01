@@ -12,6 +12,7 @@ using System.Net;
 using XUnity.AutoTranslator.Plugin.Core;
 using XUnity.Common.Logging;
 using SugoiOfflineTranslator.SimpleJSON;
+using System.Net.NetworkInformation;
 
 namespace SugoiOfflineTranslator
 {
@@ -108,6 +109,33 @@ namespace SugoiOfflineTranslator
             }
         }
 
+        private static byte[] GetEmbeddedResource(string resourceName)
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var fullResourceName = assembly.GetManifestResourceNames().Where(n => n.EndsWith(resourceName)).FirstOrDefault();
+            if (fullResourceName == null) throw new Exception($"Unable to find embedded resource: {resourceName}");
+
+            using (var stream = assembly.GetManifestResourceStream(fullResourceName))
+            {
+                using (var ms = new MemoryStream())
+                {
+                    byte[] buffer = new byte[4096];
+                    int read;
+                    while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
+                    {
+                        ms.Write(buffer, 0, read);
+                    }
+                    
+                    return ms.ToArray();
+                }
+            }
+        }
+
+        private static byte[] GetEmbeddedScriptData()
+        {
+            return GetEmbeddedResource("SugoiOfflineTranslatorServer.py");
+        }
+
         private void SetupServer(IInitializationContext context)
         {
             this.PythonExePath = PathCandidate(
@@ -132,7 +160,7 @@ namespace SugoiOfflineTranslator
 
             if (string.IsNullOrEmpty(this.ServerScriptPath))
             {
-                this.ServerScriptData = Properties.Resources.SugoiOfflineTranslatorServer;
+                this.ServerScriptData = GetEmbeddedScriptData();
             }
             else
             {

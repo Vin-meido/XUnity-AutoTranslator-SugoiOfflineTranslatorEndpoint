@@ -17,24 +17,17 @@
     <OutputPath>..\build\Release\</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="SugoiOfflineTranslatorServer.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="SugoiOfflineTranslatorServer.py" />
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="XUnity.AutoTranslator.Plugin.Core">
       <HintPath>..\libs\XUnity.AutoTranslator.Plugin.Core.dll</HintPath>
     </Reference>
     <Reference Include="XUnity.Common">
       <HintPath>..\libs\XUnity.Common.dll</HintPath>
     </Reference>
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Update="Properties\Resources.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>Resources.resx</DependentUpon>
-    </Compile>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Update="Properties\Resources.resx">
-      <Generator>ResXFileCodeGenerator</Generator>
-      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-    </EmbeddedResource>
   </ItemGroup>
 </Project>
